@@ -1,20 +1,28 @@
 import {html} from "../../../_snowpack/pkg/lit-element.js";
 import {get, translate} from "../../../_snowpack/pkg/lit-translate.js";
+import "../../../_snowpack/pkg/@material/mwc-button.js";
+import "../../../_snowpack/pkg/@material/mwc-list.js";
+import "../../../_snowpack/pkg/@material/mwc-list/mwc-list-item.js";
+import "../../../_snowpack/pkg/@material/mwc-select.js";
+import "../../wizard-textfield.js";
 import {
   cloneElement,
   createElement,
-  getReference,
   getValue,
   identity,
   isPublic,
   newActionEvent,
+  newSubWizardEvent,
   newWizardEvent,
   patterns,
   selector
 } from "../../foundation.js";
-import {
-  updateIDNamingAction
-} from "./foundation.js";
+function remove(element) {
+  return (wizard) => {
+    wizard.dispatchEvent(newActionEvent({old: {parent: element.parentElement, element}}));
+    wizard.dispatchEvent(newWizardEvent());
+  };
+}
 function nextOrd(parent) {
   const maxOrd = Math.max(...Array.from(parent.children).map((child) => parseInt(child.getAttribute("ord") ?? "-2", 10)));
   return isFinite(maxOrd) ? (maxOrd + 1).toString(10) : "0";
@@ -32,8 +40,7 @@ function createEnumValAction(parent) {
     const action = {
       new: {
         parent,
-        element,
-        reference: getReference(parent, "EnumVal")
+        element
       }
     };
     return [action];
@@ -54,35 +61,26 @@ function updateEnumValAction(element) {
 function eNumValWizard(options) {
   const doc = options.doc ? options.doc : options.parent.ownerDocument;
   const enumval = Array.from(doc.querySelectorAll(selector("EnumVal", options.identity ?? NaN))).find(isPublic) ?? null;
-  const [title, action, ord, desc, value, deleteButton] = enumval ? [
+  const [title, action, ord, desc, value, menuActions] = enumval ? [
     get("enum-val.wizard.title.edit"),
     updateEnumValAction(enumval),
     enumval.getAttribute("ord"),
     enumval.getAttribute("desc"),
     enumval.textContent,
-    html`<mwc-button
-          icon="delete"
-          trailingIcon
-          label=${translate("delete")}
-          @click=${(e) => {
-      e.target.dispatchEvent(newWizardEvent());
-      e.target.dispatchEvent(newActionEvent({
-        old: {
-          parent: enumval.parentElement,
-          element: enumval,
-          reference: enumval.nextSibling
-        }
-      }));
-    }}
-          fullwidth
-        ></mwc-button>`
+    [
+      {
+        icon: "delete",
+        label: get("remove"),
+        action: remove(enumval)
+      }
+    ]
   ] : [
     get("enum-val.wizard.title.add"),
     createEnumValAction(options.parent),
     nextOrd(options.parent),
     null,
     "",
-    html``
+    void 0
   ];
   return [
     {
@@ -93,8 +91,8 @@ function eNumValWizard(options) {
         label: "Save",
         action
       },
+      menuActions,
       content: [
-        deleteButton,
         html`<wizard-textfield
           label="ord"
           helper="${translate("scl.ord")}"
@@ -128,15 +126,14 @@ function createAction(parent, templates) {
       return [];
     const desc = getValue(inputs.find((i) => i.label === "desc"));
     const values = inputs.find((i) => i.label === "values");
-    const element = values.selected ? templates.querySelector(`EnumType[id="${values.selected.value}"]`).cloneNode(true) : parent.ownerDocument.createElement("EnumType");
+    const element = values.selected ? templates.querySelector(`EnumType[id="${values.selected.value}"]`).cloneNode(true) : createElement(parent.ownerDocument, "EnumType", {});
     element.setAttribute("id", id);
     if (desc)
       element.setAttribute("desc", desc);
     const action = {
       new: {
         parent,
-        element,
-        reference: getReference(parent, element.tagName)
+        element
       }
     };
     return [action];
@@ -188,6 +185,29 @@ export function createEnumTypeWizard(parent, templates) {
     }
   ];
 }
+function openAddEnumVal(parent) {
+  return (wizard) => {
+    wizard.dispatchEvent(newSubWizardEvent(() => eNumValWizard({parent})));
+  };
+}
+function updateEnumTpyeAction(element) {
+  return (inputs) => {
+    const id = getValue(inputs.find((i) => i.label === "id"));
+    const desc = getValue(inputs.find((i) => i.label === "desc"));
+    if (id === element.getAttribute("id") && desc === element.getAttribute("desc"))
+      return [];
+    const newElement = cloneElement(element, {id, desc});
+    const actions = [];
+    actions.push({old: {element}, new: {element: newElement}});
+    const oldId = element.getAttribute("id");
+    Array.from(element.ownerDocument.querySelectorAll(`DOType > DA[type="${oldId}"], DAType > BDA[type="${oldId}"]`)).forEach((oldDa) => {
+      const newDa = oldDa.cloneNode(false);
+      newDa.setAttribute("type", id);
+      actions.push({old: {element: oldDa}, new: {element: newDa}});
+    });
+    return [{title: get("enum.action.edit", {oldId, newId: id}), actions}];
+  };
+}
 export function eNumTypeEditWizard(eNumTypeIdentity, doc) {
   const enumtype = doc.querySelector(selector("EnumType", eNumTypeIdentity));
   if (!enumtype)
@@ -199,25 +219,21 @@ export function eNumTypeEditWizard(eNumTypeIdentity, doc) {
       primary: {
         icon: "",
         label: get("save"),
-        action: updateIDNamingAction(enumtype)
+        action: updateEnumTpyeAction(enumtype)
       },
+      menuActions: [
+        {
+          label: get("remove"),
+          icon: "delete",
+          action: remove(enumtype)
+        },
+        {
+          label: get("scl.EnumVal"),
+          icon: "playlist_add",
+          action: openAddEnumVal(enumtype)
+        }
+      ],
       content: [
-        html`<mwc-button
-          icon="delete"
-          trailingIcon
-          label="${translate("remove")}"
-          @click=${(e) => {
-          e.target.dispatchEvent(newWizardEvent());
-          e.target.dispatchEvent(newActionEvent({
-            old: {
-              parent: enumtype.parentElement,
-              element: enumtype,
-              reference: enumtype.nextSibling
-            }
-          }));
-        }}
-          fullwidth
-        ></mwc-button> `,
         html`<wizard-textfield
           label="id"
           helper="${translate("scl.id")}"
@@ -235,42 +251,28 @@ export function eNumTypeEditWizard(eNumTypeIdentity, doc) {
           nullable
           pattern="${patterns.normalizedString}"
         ></wizard-textfield>`,
-        html`<mwc-button
-            slot="graphic"
-            icon="playlist_add"
-            label="${translate("scl.EnumVal")}"
-            @click=${(e) => {
-          const wizard = eNumValWizard({
-            parent: enumtype
-          });
-          if (wizard)
-            e.target.dispatchEvent(newWizardEvent(wizard));
-          e.target.dispatchEvent(newWizardEvent());
-        }}
-          ></mwc-button>
-          <mwc-list
-            style="margin-top: 0px;"
-            @selected=${(e) => {
+        html`<mwc-list
+          style="margin-top: 0px;"
+          @selected=${(e) => {
           const wizard = eNumValWizard({
             identity: e.target.selected.value,
             doc
           });
           if (wizard)
-            e.target.dispatchEvent(newWizardEvent(wizard));
-          e.target.dispatchEvent(newWizardEvent());
+            e.target.dispatchEvent(newSubWizardEvent(wizard));
         }}
-            >${Array.from(enumtype.querySelectorAll("EnumVal")).map((enumval) => html`<mwc-list-item
-                  graphic="icon"
-                  hasMeta
-                  tabindex="0"
-                  value="${identity(enumval)}"
+          >${Array.from(enumtype.querySelectorAll("EnumVal")).map((enumval) => html`<mwc-list-item
+                graphic="icon"
+                hasMeta
+                tabindex="0"
+                value="${identity(enumval)}"
+              >
+                <span>${enumval.textContent ?? ""}</span>
+                <span slot="graphic"
+                  >${enumval.getAttribute("ord") ?? "-1"}</span
                 >
-                  <span>${enumval.textContent ?? ""}</span>
-                  <span slot="graphic"
-                    >${enumval.getAttribute("ord") ?? "-1"}</span
-                  >
-                </mwc-list-item>`)}</mwc-list
-          > `
+              </mwc-list-item>`)}</mwc-list
+        > `
       ]
     }
   ];

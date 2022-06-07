@@ -28,10 +28,40 @@ export const de = {
     dchg: "Detenänderung ist Auslöser",
     qchg: "Qualitätsanderung ist Auslöser",
     dupd: "Datenupdate ist Auslöser",
+    period: "Periodisch übertragen",
+    gi: "Manuelle Abfrage",
     fixedOffs: "Fester Offset",
-    securityEnabled: "Aktive Sicherungsmaßnahmen",
-    DataSet: "Datensetz",
-    Communication: "Kommunikation"
+    securityEnable: "Aktive Sicherungsmaßnahmen",
+    DataSet: "Datensatz",
+    Communication: "Kommunikation",
+    TrgOps: "Triggerbedingungen",
+    OptFields: "Optionale felder",
+    multicast: "SMV nach IEC 61850 9-2",
+    smpMod: "Abtast-Art",
+    smpRate: "Abtastrate",
+    nofASDU: "Abtastpunkte pro Datenpacket",
+    seqNum: "Sequenznummer mitschicken",
+    timeStamp: "Zeitstempel mitschicken",
+    dataSet: "Datensatz-Reference mitschicken",
+    reasonCode: "Was hat den Report getriggert?",
+    dataRef: "Beschreibung der Datensatzes",
+    entryID: "Entry ID mitschicken",
+    configRef: "Konfigurations-Revision mitschicken",
+    bufOvfl: "Überlauf des internen Speichers signalisieren",
+    indexed: "Mehrere Instanzen möglich",
+    buffered: "Gepufferter Report",
+    maxReport: "Anzahl Instanzen",
+    bufTime: "Min. Intervall zwischen zwei Reports",
+    intgPd: "Intervall zwischen zwei periodischen Reports",
+    SmvOpts: "Optionale Informationen",
+    refreshTime: "Zeitstempel des Abtastwertes zu Telegram hinzufügen",
+    sampleRate: "Abtastrate zu Telegram hinzufügen",
+    security: "Potentiel in Zukunft für z.B. digitale Signature",
+    synchSourceId: "Identität der Zeitquelle zu Telegram hinzufügen",
+    iedName: "Referenziertes IED",
+    ldInst: "Referenziertes logisches Gerät",
+    prefix: "Präfix des logischen Knotens",
+    lnInst: "Instanz des logischen Knotens"
   },
   settings: {
     title: "Einstellungen",
@@ -39,7 +69,11 @@ export const de = {
     languages: {de: "Deutsch", en: "Englisch (English)"},
     dark: "Dunkles Design",
     mode: "Profimodus",
-    showieds: "Zeige IEDs im Substation-Editor"
+    showieds: "Zeige IEDs im Substation-Editor",
+    selectFileButton: "Datei auswählen",
+    loadNsdTranslations: "NSDoc-Dateien hochladen",
+    invalidFileNoIdFound: "Ungültiges NSDoc ({{ filename }}); kein 'id'-Attribut in der Datei gefunden",
+    invalidNsdocVersion: "Die Version {{ id }} NSD ({{ nsdVersion }}) passt nicht zu der geladenen NSDoc ({{ filename }}, {{ nsdocVersion }})"
   },
   menu: {
     new: "Neues projekt",
@@ -62,10 +96,15 @@ export const de = {
   },
   zeroline: {
     iedsloading: "IEDs werden geladen...",
+    showieds: "IEDs im Substation-Editor anzeigen/ausblenden",
+    showfunctions: "Funktionselemente in der Ansicht filtern",
     commmap: "Kommunikationszuordnung",
-    gsecontrol: "GOOSEs anzeigen"
+    reportcontrol: "Reports anzeigen",
+    gsecontrol: "GOOSEs anzeigen",
+    smvcontrol: "Sampled Values anzeigen"
   },
   editing: {
+    node: "Benutzerdefiniertes Objekt",
     created: "{{ name }} hinzugefügt",
     deleted: "{{ name }} entfernt",
     moved: "{{ name }} verschoben",
@@ -76,7 +115,8 @@ export const de = {
       update: "Konnte {{ name }} nicht bearbeiten",
       move: "Konnte {{ name }} nicht verschieben",
       duplicate: "Konnte {{name}} nicht kopieren",
-      nameClash: '{{ parent }} enthält bereits ein {{ child }} Kind namens "{{ name }}"'
+      nameClash: '{{ parent }} enthält bereits ein {{ child }} Kind namens "{{ name }}"',
+      idClash: 'Das Projekt enthält bereits die ID "{{ id }}"'
     }
   },
   validator: {
@@ -146,7 +186,59 @@ export const de = {
       }
     },
     action: {
-      addvoltagelevel: "Spannungsebene hinzufügen"
+      addvoltagelevel: "Spannungsebene hinzufügen",
+      updatesubstation: 'Schaltanlage "{{name}}" bearbeitet'
+    }
+  },
+  iededitor: {
+    searchHelper: "IED auswählen",
+    searchHelperDesc: "({{description}})",
+    missing: "Kein IED vorhanden",
+    toggleChildElements: "???",
+    wizard: {
+      daTitle: "???",
+      doTitle: "???",
+      nsdocDescription: "Beschreibung",
+      doiDescription: "Beschreibung des DOI",
+      daiDescription: "Beschreibung des DAI",
+      ied: "IED",
+      accessPoint: "???",
+      lDevice: "???",
+      lnPrefix: "???",
+      lnDescription: "Beschreibung des LN",
+      lnInst: "???",
+      doName: "???",
+      doCdc: "???",
+      daName: "???",
+      daFc: "???",
+      daBType: "???",
+      daValue: "???"
+    }
+  },
+  ied: {
+    wizard: {
+      nameHelper: "Name des IED",
+      descHelper: "Beschreibung des IED",
+      title: {
+        edit: "IED bearbeiten",
+        delete: "IED mit Abhängigkeiten entfernen",
+        references: "Gelöschte Abhängikeiten"
+      }
+    },
+    action: {
+      updateied: 'IED "{{name}}" bearbeitet',
+      deleteied: 'IED "{{name}}" entfernt'
+    }
+  },
+  powertransformer: {
+    wizard: {
+      nameHelper: "`Name des Leistungstransformators",
+      descHelper: "Beschreibung des Leistungstransformators",
+      typeHelper: "Type des Leistungstransformators",
+      title: {
+        add: "Leistungstransformator hinzufügen",
+        edit: "Leistungstransformator bearbeiten"
+      }
     }
   },
   voltagelevel: {
@@ -161,6 +253,9 @@ export const de = {
         add: "Spannungsebene hinzufügen",
         edit: "Spannungsebene bearbeiten"
       }
+    },
+    action: {
+      updateVoltagelevel: 'Spannungsebene "{{name}}" bearbeitet'
     }
   },
   bay: {
@@ -172,6 +267,9 @@ export const de = {
         add: "Feld hinzufügen",
         edit: "Feld bearbeiten"
       }
+    },
+    action: {
+      updateBay: 'Feld "{{name}}" bearbeitet'
     }
   },
   conductingequipment: {
@@ -187,10 +285,68 @@ export const de = {
     },
     unknownType: "Unbekannter Typ"
   },
+  connectivitynode: {
+    name: "Verbindungsknoten",
+    wizard: {
+      nameHelper: "Verbindungsknoten Name",
+      pathNameHelper: "Verbindungsknoten Beschreibung",
+      title: {
+        add: "Verbindungsknoten hinzufügen",
+        edit: "Verbindungsknoten bearbeiten"
+      }
+    }
+  },
+  terminal: {
+    name: "Anschluss",
+    wizard: {
+      nameHelper: "Anschluss Name",
+      connectivityNodeHelper: "Anschluss Verbindungsknoten",
+      cNodeNameHelper: "Anschluss Verbindungsknoten Name",
+      title: {
+        add: "Anschlussknoten hinzufügen",
+        edit: "Anschlussknoten bearbeiten"
+      }
+    }
+  },
   templates: {
     name: "Data Type Templates",
     missing: "DataTypeTemplates fehlen",
     add: "DataTypeTemplates hinzufügen"
+  },
+  subscription: {
+    none: "Keine Verbindung vorhanden",
+    publisherGoose: {
+      title: "GOOSE-Publizierer",
+      subscriberTitle: "Verbunden mit {{ selected }}"
+    },
+    subscriberGoose: {
+      title: "IED-Publizierer",
+      publisherTitle: "GOOSE(s) verbunden mit {{selected}}"
+    },
+    subscriber: {
+      subscribed: "Verbunden",
+      availableToSubscribe: "Kann verbunden werden",
+      partiallySubscribed: "Teilweise verbunden",
+      noGooseMessageSelected: "Keine GOOSE ausgewählt",
+      noIedSelected: "Keine IED ausgewählt"
+    },
+    view: {
+      publisherView: "Zeigt verbundene IED(s) der ausgewählten GOOSE",
+      subscriberView: "Zeigt verbundene GOOSE(s) des ausgewählten IED"
+    }
+  },
+  sampledvalues: {
+    none: "Keine Verbindung vorhanden",
+    sampledValuesList: {
+      title: "Sampled Values"
+    },
+    subscriberIed: {
+      title: "Verbunden mit {{ selected }}",
+      subscribed: "Verbunden",
+      availableToSubscribe: "Kann verbunden werden",
+      partiallySubscribed: "Teilweise verbunden",
+      noSampledValuesSelected: "Keinen Kontrollblock ausgewählt"
+    }
   },
   "enum-val": {
     wizard: {
@@ -206,6 +362,9 @@ export const de = {
         add: "EnumType hinzufügen",
         edit: "EnumType bearbeiten"
       }
+    },
+    action: {
+      edit: 'DAType ID "{{oldId}}" und deren DA-Referenzen geändert zu {{newId}} '
     }
   },
   datype: {
@@ -214,6 +373,9 @@ export const de = {
         add: "DAType hinzufügen",
         edit: "DAType bearbeiten"
       }
+    },
+    action: {
+      edit: 'EnumType ID "{{oldId}}" und deren DA-Referenzen geändert zu {{newId}} '
     }
   },
   bda: {
@@ -230,6 +392,17 @@ export const de = {
         add: "Add DA",
         edit: "Edit DA"
       }
+    }
+  },
+  dai: {
+    wizard: {
+      valueHelper: "Der Wert sollte vom Typ sein {{type}}",
+      title: {
+        edit: "Edit {{daiName}}"
+      }
+    },
+    action: {
+      updatedai: 'DAI "{{daiName}} bearbeitet"'
     }
   },
   sdo: {
@@ -255,6 +428,9 @@ export const de = {
         edit: "DOType bearbeiten"
       },
       enums: "Standard Enumerations"
+    },
+    action: {
+      edit: 'DOType ID "{{oldId}}" und deren DO-Referenzen geändert zu {{newId}} '
     }
   },
   lnodetype: {
@@ -265,6 +441,9 @@ export const de = {
         select: "Data Objects auswählen"
       }
     },
+    action: {
+      edit: 'LNodeType ID "{{oldId}}" und deren LN-Referenzen geändert zu {{newId}} '
+    },
     autoimport: "Vordefinierte OpenSCD LN Klasse verwenden",
     missinglnclass: "Vordefinierte LN Klasse fehlt"
   },
@@ -273,9 +452,18 @@ export const de = {
       title: {
         selectIEDs: "Auswahl IEDs",
         selectLDs: "Auswahl logische Geräte",
-        selectLNs: "Auswahl logische Knoten"
+        selectLNs: "Auswahl logische Knoten",
+        selectLNodeTypes: "Auswahl logische Knoten Type"
       },
-      placeholder: "Bitte laden Sie eine SCL-Datei, die IED-Elemente enthält."
+      placeholder: "Bitte laden Sie eine SCL-Datei, die IED-Elemente enthält.",
+      uniquewarning: "Logische Knoten Klasse existiert bereits",
+      reference: "Referenz auf bestehenden logischen Knoten erstellen",
+      instance: "Referenz auf logischen Knoten Typ erstellen"
+    },
+    log: {
+      title: "LNode vom Type {{lnClass}} kann nicht hinzugefügt werden",
+      nonuniquelninst: "Keine eindeutige Instanz (lnInst)",
+      uniqueln0: "Nur eine Instanz von {{lnClass}} zulässig"
     },
     tooltip: "Referenz zu logischen Knoten erstellen"
   },
@@ -324,11 +512,7 @@ export const de = {
   connectedap: {
     name: "Schnittstelle",
     wizard: {
-      addschemainsttype: "XMLSchema-instance type hinzufügen",
-      title: {
-        connect: "Schnittstelle verbinden",
-        edit: "Schnittstelle bearbeiten"
-      }
+      addschemainsttype: "XMLSchema-instance type hinzufügen"
     },
     action: {
       addaddress: "Adressfeld bearbeitet ({{iedName}} - {{apName}})"
@@ -337,6 +521,12 @@ export const de = {
   gse: {
     action: {
       addaddress: "GSE bearbeitet ({{identity}})"
+    },
+    missingaccp: "AccessPoint is nicht verbunden. GSE kann nicht hinzugefügt werden."
+  },
+  smv: {
+    action: {
+      addaddress: "SMV bearbeitet ({{identity}})"
     }
   },
   subscriber: {
@@ -357,6 +547,59 @@ export const de = {
   },
   code: {
     log: "Element im XML Editor angepasst:  {{id}}"
+  },
+  updatedesc: {
+    abb: "Signalbeschreibungen zu ABB IEDs hinzugefügt",
+    sel: "Signalbeschreibungen zu SEL IEDs hinzugefügt"
+  },
+  sld: {
+    substationSelector: "Schaltanlage auswählen",
+    wizard: {
+      xCoordinateHelper: "X-Koordinate im Einphasenersatzschaltbild",
+      yCoordinateHelper: "Y-Koordinate im Einphasenersatzschaltbild"
+    }
+  },
+  dataset: {
+    fcda: {add: "Daten-Attribute hinzufügen"},
+    fcd: {add: "Daten-Objekte hinzufügen"}
+  },
+  report: {
+    wizard: {location: "Ablageort der Reports wählen"},
+    rptID: "Report-Kontrolblock Kennung"
+  },
+  cleanup: {
+    unreferencedDataSets: {
+      title: "Nicht referenzierte Datensätze",
+      deleteButton: "Ausgewählten Datensatz entfernen",
+      tooltip: "DatenSätze ohne Verweis auf einen zugehörigen GOOSE-, Log-, Report- oder Sampled Value Control Block"
+    },
+    unreferencedControls: {
+      title: "Steuerblöcke mit einem fehlenden oder ungültigen Kontrollblock",
+      deleteButton: "Ausgewählte Kontrollblöcke entfernen",
+      tooltip: "Steuerblöcke ohne Verweis auf ein vorhandenes Datensatz. Das ist kein Fehler und eher üblich for allem für Reports",
+      addressDefinitionTooltip: "Für diesen Kontrollblock existiert eine Adressdefinition im Abschnitt Kommunikation",
+      alsoRemoveFromCommunication: "Kommunikation SMV/GSE mit entfernen"
+    }
+  },
+  controlblock: {
+    action: {
+      edit: '{{type}} "{{name}}" in IED {{iedName}} bearbeitet',
+      add: '{{type}} "{{name}}" zu IED {{iedName}} hinzugefügt',
+      remove: '{{type}} "{{name}}" and referenzierte Element von IED {{iedName}} entfernt'
+    },
+    hints: {
+      source: "Quell-IED",
+      missingServer: "Kein Server vorhanden",
+      exist: "{{type}} mit dem Namen {{name}} existiert",
+      noMatchingData: "Keine Datenübereinstimmung",
+      valid: "Kann kopiert werden"
+    },
+    label: {
+      copy: "Kopie in anderen IEDs ertellen"
+    }
+  },
+  gsecontrol: {
+    wizard: {location: "Ablageort der GOOSE wählen"}
   },
   add: "Hinzufügen",
   new: "Neu",

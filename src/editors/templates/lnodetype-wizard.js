@@ -1,14 +1,21 @@
 import {html} from "../../../_snowpack/pkg/lit-element.js";
 import {get, translate} from "../../../_snowpack/pkg/lit-translate.js";
+import "../../../_snowpack/pkg/@material/mwc-button.js";
+import "../../../_snowpack/pkg/@material/mwc-list.js";
+import "../../../_snowpack/pkg/@material/mwc-list/mwc-list-item.js";
+import "../../../_snowpack/pkg/@material/mwc-select.js";
+import "../../wizard-checkbox.js";
+import "../../wizard-textfield.js";
+import "../../wizard-select.js";
 import {
   cloneElement,
   createElement,
   getChildElementsByTagName,
-  getReference,
   getValue,
   identity,
   isPublic,
   newActionEvent,
+  newSubWizardEvent,
   newWizardEvent,
   patterns,
   selector
@@ -16,9 +23,19 @@ import {
 import {
   addReferencedDataTypes,
   allDataTypeSelector,
-  buildListFromStringArray,
   unifyCreateActionArray
 } from "./foundation.js";
+function remove(element) {
+  return (wizard) => {
+    wizard.dispatchEvent(newActionEvent({old: {parent: element.parentElement, element}}));
+    wizard.dispatchEvent(newWizardEvent());
+  };
+}
+function openAddDo(parent) {
+  return (wizard) => {
+    wizard.dispatchEvent(newSubWizardEvent(() => dOWizard({parent})));
+  };
+}
 function updateDoAction(element) {
   return (inputs) => {
     const name = getValue(inputs.find((i) => i.label === "name"));
@@ -57,8 +74,7 @@ function createDoAction(parent) {
     actions.push({
       new: {
         parent,
-        element,
-        reference: getReference(parent, element.tagName)
+        element
       }
     });
     return actions;
@@ -71,44 +87,35 @@ function dOWizard(options) {
     title,
     action,
     type,
-    deleteButton,
+    menuActions,
     name,
     desc,
     accessControl,
-    transientList
+    transient
   ] = DO ? [
     get("do.wizard.title.edit"),
     updateDoAction(DO),
     DO.getAttribute("type"),
-    html`<mwc-button
-          icon="delete"
-          trailingIcon
-          label="${translate("remove")}"
-          @click=${(e) => {
-      e.target.dispatchEvent(newWizardEvent());
-      e.target.dispatchEvent(newActionEvent({
-        old: {
-          parent: DO.parentElement,
-          element: DO,
-          reference: DO.nextSibling
-        }
-      }));
-    }}
-          fullwidth
-        ></mwc-button> `,
+    [
+      {
+        icon: "delete",
+        label: get("remove"),
+        action: remove(DO)
+      }
+    ],
     DO.getAttribute("name"),
     DO.getAttribute("desc"),
     DO.getAttribute("accessControl"),
-    buildListFromStringArray([null, "true", "false"], DO.getAttribute("transient"))
+    DO.getAttribute("transient")
   ] : [
     get("do.wizard.title.add"),
     createDoAction(options.parent),
     null,
-    html``,
+    void 0,
     "",
     null,
     null,
-    buildListFromStringArray([null, "true", "false"], null)
+    null
   ];
   const types = Array.from(doc.querySelectorAll("DOType")).filter(isPublic).filter((type2) => type2.getAttribute("id"));
   return [
@@ -116,8 +123,8 @@ function dOWizard(options) {
       title,
       element: DO ?? void 0,
       primary: {icon: "", label: get("save"), action},
+      menuActions,
       content: [
-        deleteButton,
         html`<wizard-textfield
           label="name"
           .maybeValue=${name}
@@ -153,24 +160,27 @@ function dOWizard(options) {
           nullable
           pattern="${patterns.normalizedString}"
         ></wizard-textfield>`,
-        html`<mwc-select
-          fixedMenuPosition
+        html`<wizard-checkbox
           label="transient"
+          .maybeValue="${transient}"
           helper="${translate("scl.transient")}"
-          >${transientList}</mwc-select
-        >`
+          nullable
+        ></wizard-checkbox>`
       ]
     }
   ];
 }
-function getDescendantClasses(nsd74, base) {
+function getDescendantClasses(nsd74, base, otherNsd) {
   if (base === "")
     return [];
-  const descendants = getDescendantClasses(nsd74, nsd74.querySelector(`LNClass[name="${base}"], AbstractLNClass[name="${base}"]`)?.getAttribute("base") ?? "");
-  return descendants.concat(Array.from(nsd74.querySelectorAll(`LNClass[name="${base}"], AbstractLNClass[name="${base}"]`)));
+  const currentNsd = !otherNsd || nsd74.querySelector(`LNClass[name="${base}"], AbstractLNClass[name="${base}"]`) ? nsd74 : otherNsd;
+  const descendants = Array.from(nsd74.querySelectorAll(`LNClass[name="${base}"], AbstractLNClass[name="${base}"]`));
+  const otherDescendants = Array.from(otherNsd?.querySelectorAll(`LNClass[name="${base}"], AbstractLNClass[name="${base}"]`) ?? []);
+  const parentDescendants = getDescendantClasses(nsd74, currentNsd.querySelector(`LNClass[name="${base}"], AbstractLNClass[name="${base}"]`)?.getAttribute("base") ?? "", otherNsd);
+  return parentDescendants.concat(descendants, otherDescendants);
 }
-function getAllDataObjects(nsd74, base) {
-  const lnodeclasses = getDescendantClasses(nsd74, base);
+function getAllDataObjects(nsd74, base, nsd7420) {
+  const lnodeclasses = getDescendantClasses(nsd74, base, nsd7420);
   return lnodeclasses.flatMap((lnodeclass) => Array.from(lnodeclass.querySelectorAll("DataObject")));
 }
 function createNewLNodeType(parent, element) {
@@ -180,22 +190,19 @@ function createNewLNodeType(parent, element) {
     selected.forEach((select) => {
       const DO = createElement(parent.ownerDocument, "DO", {
         name: select.label,
-        bType: "Struct",
         type: select.value
       });
       actions.push({
         new: {
           parent: element,
-          element: DO,
-          reference: getReference(element, DO.tagName)
+          element: DO
         }
       });
     });
     actions.push({
       new: {
         parent,
-        element,
-        reference: getReference(parent, element.tagName)
+        element
       }
     });
     return actions;
@@ -248,13 +255,12 @@ function addPredefinedLNodeType(parent, newLNodeType, templateLNodeType) {
   actions.push({
     new: {
       parent,
-      element: newLNodeType,
-      reference: getReference(parent, "LNodeType")
+      element: newLNodeType
     }
   });
   return unifyCreateActionArray(actions);
 }
-function startLNodeTypeCreate(parent, templates, nsd74) {
+function startLNodeTypeCreate(parent, templates, nsd74, nsd7420) {
   return (inputs, wizard) => {
     const id = getValue(inputs.find((i) => i.label === "id"));
     if (!id)
@@ -273,7 +279,7 @@ function startLNodeTypeCreate(parent, templates, nsd74) {
       newLNodeType.setAttribute("desc", desc);
     if (templateLNodeType)
       return addPredefinedLNodeType(parent, newLNodeType, templateLNodeType);
-    const allDo = getAllDataObjects(nsd74, value);
+    const allDo = getAllDataObjects(nsd74, value, nsd7420);
     wizard.dispatchEvent(newWizardEvent(createLNodeTypeHelperWizard(parent, newLNodeType, allDo)));
     wizard.dispatchEvent(newWizardEvent());
     return [];
@@ -291,14 +297,14 @@ function onLnClassChange(e, templates) {
     primaryAction?.setAttribute("icon", "");
   }
 }
-export function createLNodeTypeWizard(parent, templates, nsd74) {
+export function createLNodeTypeWizard(parent, templates, nsd74, nsd7420) {
   return [
     {
       title: get("lnodetype.wizard.title.add"),
       primary: {
         icon: "",
         label: get("next") + "...",
-        action: startLNodeTypeCreate(parent, templates, nsd74)
+        action: startLNodeTypeCreate(parent, templates, nsd74, nsd7420)
       },
       content: [
         html`<mwc-select
@@ -345,7 +351,24 @@ export function createLNodeTypeWizard(parent, templates, nsd74) {
                 value="${className}"
                 ><span>${className}</span>
                 <span slot="meta"
-                  >${getAllDataObjects(nsd74, className).length}</span
+                  >${getAllDataObjects(nsd74, className, nsd7420).length}</span
+                >
+              </mwc-list-item>`;
+        })}
+          <mwc-list-item noninteractive
+            >Empty lnClasses from IEC 61850-7-420</mwc-list-item
+          >
+          <li divider role="separator"></li>
+          ${Array.from(nsd7420.querySelectorAll("LNClasses > LNClass")).map((lnClass) => {
+          const className = lnClass.getAttribute("name") ?? "";
+          return html`<mwc-list-item
+                style="min-width:200px"
+                graphic="icon"
+                hasMeta
+                value="${className}"
+                ><span>${className}</span>
+                <span slot="meta"
+                  >${getAllDataObjects(nsd74, className, nsd7420).length}</span
                 >
               </mwc-list-item>`;
         })}
@@ -378,7 +401,17 @@ function updateLNodeTypeAction(element) {
     if (id === element.getAttribute("id") && desc === element.getAttribute("desc") && lnClass == element.getAttribute("lnClass"))
       return [];
     const newElement = cloneElement(element, {id, desc, lnClass});
-    return [{old: {element}, new: {element: newElement}}];
+    const actions = [];
+    actions.push({old: {element}, new: {element: newElement}});
+    const oldId = element.getAttribute("id");
+    Array.from(element.ownerDocument.querySelectorAll(`LN0[lnType="${oldId}"], LN[lnType="${oldId}"]`)).forEach((oldAnyLn) => {
+      const newAnyLn = oldAnyLn.cloneNode(false);
+      newAnyLn.setAttribute("lnType", id);
+      actions.push({old: {element: oldAnyLn}, new: {element: newAnyLn}});
+    });
+    return [
+      {title: get("lnodetype.action.edit", {oldId, newId: id}), actions}
+    ];
   };
 }
 export function lNodeTypeWizard(lNodeTypeIdentity, doc) {
@@ -394,23 +427,19 @@ export function lNodeTypeWizard(lNodeTypeIdentity, doc) {
         label: get("save"),
         action: updateLNodeTypeAction(lnodetype)
       },
+      menuActions: [
+        {
+          label: get("remove"),
+          icon: "delete",
+          action: remove(lnodetype)
+        },
+        {
+          label: get("scl.DO"),
+          icon: "playlist_add",
+          action: openAddDo(lnodetype)
+        }
+      ],
       content: [
-        html`<mwc-button
-          icon="delete"
-          trailingIcon
-          label="${translate("remove")}"
-          @click=${(e) => {
-          e.target.dispatchEvent(newWizardEvent());
-          e.target.dispatchEvent(newActionEvent({
-            old: {
-              parent: lnodetype.parentElement,
-              element: lnodetype,
-              reference: lnodetype.nextSibling
-            }
-          }));
-        }}
-          fullwidth
-        ></mwc-button> `,
         html`<wizard-textfield
           label="id"
           helper="${translate("scl.id")}"
@@ -435,20 +464,6 @@ export function lNodeTypeWizard(lNodeTypeIdentity, doc) {
           required
           pattern="${patterns.lnClass}"
         ></wizard-textfield>`,
-        html` <mwc-button
-          slot="graphic"
-          icon="playlist_add"
-          trailingIcon
-          label="${translate("scl.DO")}"
-          @click=${(e) => {
-          const wizard = dOWizard({
-            parent: lnodetype
-          });
-          if (wizard)
-            e.target.dispatchEvent(newWizardEvent(wizard));
-          e.target.dispatchEvent(newWizardEvent());
-        }}
-        ></mwc-button>`,
         html`
           <mwc-list
             style="margin-top: 0px;"
@@ -458,8 +473,7 @@ export function lNodeTypeWizard(lNodeTypeIdentity, doc) {
             doc
           });
           if (wizard)
-            e.target.dispatchEvent(newWizardEvent(wizard));
-          e.target.dispatchEvent(newWizardEvent());
+            e.target.dispatchEvent(newSubWizardEvent(wizard));
         }}
           >
             ${Array.from(lnodetype.querySelectorAll("DO")).map((doelement) => html`<mwc-list-item

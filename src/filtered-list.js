@@ -9,18 +9,36 @@ var __decorate = (decorators, target, key, kind) => {
     __defProp(target, key, result);
   return result;
 };
-import {List} from "../_snowpack/pkg/@material/mwc-list.js";
-import {CheckListItem} from "../_snowpack/pkg/@material/mwc-list/mwc-check-list-item.js";
-import {ListBase} from "../_snowpack/pkg/@material/mwc-list/mwc-list-base.js";
 import {
   css,
   customElement,
   html,
-  internalProperty,
+  state,
   property,
   query,
   unsafeCSS
 } from "../_snowpack/pkg/lit-element.js";
+import {translate} from "../_snowpack/pkg/lit-translate.js";
+import "../_snowpack/pkg/@material/mwc-checkbox.js";
+import "../_snowpack/pkg/@material/mwc-formfield.js";
+import "../_snowpack/pkg/@material/mwc-textfield.js";
+import {CheckListItem} from "../_snowpack/pkg/@material/mwc-list/mwc-check-list-item.js";
+import {List} from "../_snowpack/pkg/@material/mwc-list.js";
+import {ListBase} from "../_snowpack/pkg/@material/mwc-list/mwc-list-base.js";
+function slotItem(item) {
+  if (!item.closest("filtered-list") || !item.parentElement)
+    return item;
+  if (item.parentElement instanceof FilteredList)
+    return item;
+  return slotItem(item.parentElement);
+}
+function hideFiltered(item, searchText) {
+  const itemInnerText = item.innerText + "\n";
+  const childInnerText = Array.from(item.children).map((child) => child.innerText).join("\n");
+  const filterTarget = (itemInnerText + childInnerText).toUpperCase();
+  const terms = searchText.toUpperCase().split(" ");
+  terms.some((term) => !filterTarget.includes(term)) ? slotItem(item).classList.add("hidden") : slotItem(item).classList.remove("hidden");
+}
 export let FilteredList = class extends ListBase {
   constructor() {
     super();
@@ -43,11 +61,7 @@ export let FilteredList = class extends ListBase {
     this.items.filter((item) => !item.disabled && !item.classList.contains("hidden")).forEach((item) => item.selected = select);
   }
   onFilterInput() {
-    this.items.forEach((item) => {
-      const text = (item.innerText + "\n" + Array.from(item.children).map((child) => child.innerText).join("\n")).toUpperCase();
-      const terms = this.searchField.value.toUpperCase().split(" ");
-      terms.some((term) => !text.includes(term)) ? item.classList.add("hidden") : item.classList.remove("hidden");
-    });
+    Array.from(this.querySelectorAll("mwc-list-item, mwc-check-list-item, mwc-radio-list-item")).filter((item) => !item.noninteractive).forEach((item) => hideFiltered(item, this.searchField.value));
   }
   onListItemConnected(e) {
     super.onListItemConnected(e);
@@ -66,12 +80,14 @@ export let FilteredList = class extends ListBase {
   }
   render() {
     return html`<div id="tfcontainer">
-        <mwc-textfield
-          label="${this.searchFieldLabel ?? ""}"
-          iconTrailing="search"
-          outlined
-          @input=${() => this.onFilterInput()}
-        ></mwc-textfield>
+        <abbr title="${this.searchFieldLabel ?? translate("filter")}"
+          ><mwc-textfield
+            label="${this.searchFieldLabel ?? ""}"
+            iconTrailing="search"
+            outlined
+            @input=${() => this.onFilterInput()}
+          ></mwc-textfield
+        ></abbr>
         ${this.renderCheckAll()}
       </div>
       ${super.render()}`;
@@ -89,8 +105,15 @@ FilteredList.styles = css`
       display: none;
     }
 
+    abbr {
+      display: flex;
+      flex: auto;
+      margin: 8px;
+      text-decoration: none;
+      border-bottom: none;
+    }
+
     mwc-textfield {
-      margin: 10px;
       width: 100%;
       --mdc-shape-small: 28px;
     }
@@ -110,13 +133,13 @@ __decorate([
   property({type: Boolean})
 ], FilteredList.prototype, "disableCheckAll", 2);
 __decorate([
-  internalProperty()
+  state()
 ], FilteredList.prototype, "existCheckListItem", 1);
 __decorate([
-  internalProperty()
+  state()
 ], FilteredList.prototype, "isAllSelected", 1);
 __decorate([
-  internalProperty()
+  state()
 ], FilteredList.prototype, "isSomeSelected", 1);
 __decorate([
   query("mwc-textfield")

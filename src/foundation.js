@@ -2,17 +2,21 @@ import {directive} from "../_snowpack/pkg/lit-html.js";
 import {Select} from "../_snowpack/pkg/@material/mwc-select.js";
 import {WizardTextField} from "./wizard-textfield.js";
 import {WizardSelect} from "./wizard-select.js";
+import {WizardCheckbox} from "./wizard-checkbox.js";
 export function isCreate(action) {
-  return action.old === void 0 && action.new?.parent !== void 0 && action.new?.element !== void 0 && action.new?.reference !== void 0;
+  return action.old === void 0 && action.new?.parent !== void 0 && action.new?.element !== void 0;
 }
 export function isDelete(action) {
-  return action.old?.parent !== void 0 && action.old?.element !== void 0 && action.old?.reference !== void 0 && action.new === void 0;
+  return action.old?.parent !== void 0 && action.old?.element !== void 0 && action.new === void 0;
 }
 export function isMove(action) {
-  return action.old?.parent !== void 0 && action.old?.element !== void 0 && action.old?.reference !== void 0 && action.new?.parent !== void 0 && action.new?.element == void 0 && action.new?.reference !== void 0;
+  return action.old?.parent !== void 0 && action.old?.element !== void 0 && action.new?.parent !== void 0 && action.new?.element == void 0;
+}
+export function isReplace(action) {
+  return action.old?.parent === void 0 && action.old?.element !== void 0 && action.new?.parent === void 0 && action.new?.element !== void 0;
 }
 export function isUpdate(action) {
-  return action.old?.parent === void 0 && action.old?.element !== void 0 && action.new?.parent === void 0 && action.new?.element !== void 0;
+  return action.old === void 0 && action.new === void 0 && action.element !== void 0 && action.newAttributes !== void 0 && action.oldAttributes !== void 0;
 }
 export function isSimple(action) {
   return !(action.actions instanceof Array);
@@ -45,10 +49,24 @@ export function invert(action) {
       new: {parent: action.old.parent, reference: action.old.reference},
       ...metaData
     };
-  else if (isUpdate(action))
+  else if (isReplace(action))
     return {new: action.old, old: action.new, ...metaData};
+  else if (isUpdate(action))
+    return {
+      element: action.element,
+      oldAttributes: action.newAttributes,
+      newAttributes: action.oldAttributes,
+      ...metaData
+    };
   else
     return unreachable("Unknown EditorAction type in invert.");
+}
+export function createUpdateAction(element, newAttributes) {
+  const oldAttributes = {};
+  Array.from(element.attributes).forEach((attr) => {
+    oldAttributes[attr.name] = attr.value;
+  });
+  return {element, oldAttributes, newAttributes};
 }
 export function newActionEvent(action, eventInitDict) {
   return new CustomEvent("editor-action", {
@@ -58,9 +76,9 @@ export function newActionEvent(action, eventInitDict) {
     detail: {action, ...eventInitDict?.detail}
   });
 }
-export const wizardInputSelector = "wizard-textfield, mwc-textfield, ace-editor, mwc-select,wizard-select";
-export function isWizard(wizardAction) {
-  return typeof wizardAction === "function";
+export const wizardInputSelector = "wizard-textfield, mwc-textfield, ace-editor, mwc-select,wizard-select, wizard-checkbox";
+export function isWizardFactory(maybeFactory) {
+  return typeof maybeFactory === "function";
 }
 export function checkValidity(input) {
   if (input instanceof WizardTextField || input instanceof Select)
@@ -75,7 +93,7 @@ export function reportValidity(input) {
     return true;
 }
 export function getValue(input) {
-  if (input instanceof WizardTextField || input instanceof WizardSelect)
+  if (input instanceof WizardTextField || input instanceof WizardSelect || input instanceof WizardCheckbox)
     return input.maybeValue;
   else
     return input.value ?? null;
@@ -86,13 +104,24 @@ export function getMultiplier(input) {
   else
     return null;
 }
-export function newWizardEvent(wizard = null, eventInitDict) {
+export function newWizardEvent(wizardOrFactory, eventInitDict) {
+  if (!wizardOrFactory)
+    return new CustomEvent("wizard", {
+      bubbles: true,
+      composed: true,
+      ...eventInitDict,
+      detail: {wizard: null, ...eventInitDict?.detail}
+    });
+  const wizard = isWizardFactory(wizardOrFactory) ? wizardOrFactory : () => wizardOrFactory;
   return new CustomEvent("wizard", {
     bubbles: true,
     composed: true,
     ...eventInitDict,
     detail: {wizard, ...eventInitDict?.detail}
   });
+}
+export function newSubWizardEvent(wizardOrFactory) {
+  return newWizardEvent(wizardOrFactory, {detail: {subwizard: true}});
 }
 export function newLogEvent(detail, eventInitDict) {
   return new CustomEvent("log", {
@@ -141,6 +170,22 @@ export function referencePath(element) {
     nextParent = nextParent.parentElement;
   }
   return path;
+}
+export function getNameAttribute(element) {
+  const name2 = element.getAttribute("name");
+  return name2 ? name2 : void 0;
+}
+export function getDescriptionAttribute(element) {
+  const name2 = element.getAttribute("desc");
+  return name2 ? name2 : void 0;
+}
+export function getPathNameAttribute(element) {
+  const name2 = element.getAttribute("pathName");
+  return name2 ? name2 : void 0;
+}
+export function getInstanceAttribute(element) {
+  const inst = element.getAttribute("inst");
+  return inst ? inst : void 0;
 }
 export function pathParts(identity2) {
   const path = identity2.split(">");
@@ -214,7 +259,7 @@ function kDCSelector(tagName, identity2) {
   return `${selector("IED", parentIdentity)}>${tagName}[iedName="${iedName}"][apName="${apName}"]`;
 }
 function associationIdentity(e) {
-  return `${identity(e.parentElement)}>${e.getAttribute("associationID")}`;
+  return `${identity(e.parentElement)}>${e.getAttribute("associationID") ?? ""}`;
 }
 function associationSelector(tagName, identity2) {
   const [parentIdentity, associationID] = pathParts(identity2);
@@ -280,7 +325,7 @@ function fCDAIdentity(e) {
 function fCDASelector(tagName, identity2) {
   const [parentIdentity, childIdentity] = pathParts(identity2);
   const [ldInst, prefix, lnClass, lnInst] = childIdentity.split(/[ /.]/);
-  const matchDoDa = childIdentity.match(/.([A-Z][a-z0-9.]*) ([A-Za-z0-9.]*) \(/);
+  const matchDoDa = childIdentity.match(/.([A-Z][A-Za-z0-9.]*) ([A-Za-z0-9.]*) \(/);
   const doName = matchDoDa && matchDoDa[1] ? matchDoDa[1] : "";
   const daName = matchDoDa && matchDoDa[2] ? matchDoDa[2] : "";
   const matchFx = childIdentity.match(/\(([A-Z]{2})/);
@@ -346,9 +391,9 @@ function extRefIdentity(e) {
     "srcLNInst",
     "srcCBName"
   ].map((name2) => e.getAttribute(name2));
-  const cbPath = srcCBName ? `${serviceType}:${srcCBName} ${srcLDInst ?? ""}/${srcPrefix ?? ""} ${srcLNClass} ${srcLNInst ?? ""}` : "";
+  const cbPath = srcCBName ? `${serviceType}:${srcCBName} ${srcLDInst ?? ""}/${srcPrefix ?? ""} ${srcLNClass ?? ""} ${srcLNInst ?? ""}` : "";
   const dataPath = `${iedName} ${ldInst}/${prefix ?? ""} ${lnClass} ${lnInst ?? ""} ${doName} ${daName ? daName : ""}`;
-  return `${parentIdentity}>${cbPath} ${dataPath}${intAddr ? `@${intAddr}` : ""}`;
+  return `${parentIdentity}>${cbPath ? cbPath + " " : ""}${dataPath}${intAddr ? `@${intAddr}` : ""}`;
 }
 function extRefSelector(tagName, identity2) {
   const [parentIdentity, childIdentity] = pathParts(identity2);
@@ -483,16 +528,16 @@ function ixNamingIdentity(e) {
   const [name2, ix] = ["name", "ix"].map((name3) => e.getAttribute(name3));
   return `${identity(e.parentElement)}>${name2}${ix ? "[" + ix + "]" : ""}`;
 }
-function ixNamingSelector(tagName, identity2, depth = -1) {
-  if (depth === -1)
-    depth = identity2.split(">").length;
+function ixNamingSelector(tagName, identity2, depth2 = -1) {
+  if (depth2 === -1)
+    depth2 = identity2.split(">").length;
   const [parentIdentity, childIdentity] = pathParts(identity2);
   const [_0, name2, _1, ix] = childIdentity.match(/([^[]*)(\[([0-9]*)\])?/) ?? [];
   if (!name2)
     return voidSelector;
-  if (depth === 0)
+  if (depth2 === 0)
     return `${tagName}[name="${name2}"]`;
-  const parentSelectors = tags[tagName].parents.flatMap((parentTag) => parentTag === "SDI" ? ixNamingSelector(parentTag, parentIdentity, depth - 1).split(",") : selector(parentTag, parentIdentity).split(",")).filter((selector2) => !selector2.startsWith(voidSelector));
+  const parentSelectors = tags[tagName].parents.flatMap((parentTag) => parentTag === "SDI" ? ixNamingSelector(parentTag, parentIdentity, depth2 - 1).split(",") : selector(parentTag, parentIdentity).split(",")).filter((selector2) => !selector2.startsWith(voidSelector));
   if (parentSelectors.length === 0)
     return voidSelector;
   const [nameSelectors, ixSelectors] = [
@@ -605,18 +650,18 @@ function sCLSelector() {
 function namingIdentity(e) {
   return e.parentElement.tagName === "SCL" ? e.getAttribute("name") : `${identity(e.parentElement)}>${e.getAttribute("name")}`;
 }
-function namingSelector(tagName, identity2, depth = -1) {
-  if (depth === -1)
-    depth = identity2.split(">").length;
+function namingSelector(tagName, identity2, depth2 = -1) {
+  if (depth2 === -1)
+    depth2 = identity2.split(">").length;
   const [parentIdentity, name2] = pathParts(identity2);
   if (!name2)
     return voidSelector;
-  if (depth === 0)
+  if (depth2 === 0)
     return `${tagName}[name="${name2}"]`;
   const parents = tags[tagName].parents;
   if (!parents)
     return voidSelector;
-  const parentSelectors = parents.flatMap((parentTag) => tags[parentTag].selector === tags["Substation"].selector ? namingSelector(parentTag, parentIdentity, depth - 1).split(",") : selector(parentTag, parentIdentity).split(",")).filter((selector2) => !selector2.startsWith(voidSelector));
+  const parentSelectors = parents.flatMap((parentTag) => tags[parentTag].selector === tags["Substation"].selector ? namingSelector(parentTag, parentIdentity, depth2 - 1).split(",") : selector(parentTag, parentIdentity).split(",")).filter((selector2) => !selector2.startsWith(voidSelector));
   if (parentSelectors.length === 0)
     return voidSelector;
   return crossProduct(parentSelectors, [">"], [tagName], [`[name="${name2}"]`]).map((strings) => strings.join("")).join(",");
@@ -1770,32 +1815,32 @@ export const ifImplemented = directive((rendered) => (part) => {
   else
     part.setValue("");
 });
-const nameStartChar = "[:_A-Za-z]|[À-Ö]|[Ø-ö]|[ø-˿]|[Ͱ-ͽ]|[Ϳ-῿]|[‌-‍]|[⁰-↏]|[Ⰰ-⿯]|[、-퟿]|[豈-﷏]|[ﷰ-�]|[𐀀\\-󯿿]";
+const nameStartChar = "[:_A-Za-z]|[À-Ö]|[Ø-ö]|[ø-˿]|[Ͱ-ͽ]|[Ϳ-῿]|[‌-‍]|[⁰-↏]|[Ⰰ-⿯]|[、-퟿]|[豈-﷏]|[ﷰ-�]";
 const nameChar = nameStartChar + "|[.0-9-]|·|[̀-ͯ]|[‿-⁀]";
 const name = nameStartChar + "(" + nameChar + ")*";
 const nmToken = "(" + nameChar + ")+";
 export const patterns = {
-  string: "([	-\n]|[\r]|[ -~]|[]|[ -퟿]|[-�]|[𐀀\\-􏿿])*",
-  normalizedString: "([ -~]|[]|[ -퟿]|[-�]|[𐀀\\-􏿿])*",
+  string: "([	-\n]|[\r]|[ -~]|[]|[ -퟿]|[-�])*",
+  normalizedString: "([ -~]|[]|[ -퟿]|[-�])*",
   name,
   nmToken,
   names: name + "( " + name + ")*",
   nmTokens: nmToken + "( " + nmToken + ")*",
-  decimal: "((-|\\+)?([0-9]+(\\.[0-9]*)?|\\.[0-9]+))",
-  unsigned: "\\+?([0-9]+(\\.[0-9]*)?|\\.[0-9]+)",
+  decimal: "[+-]?[0-9]+(([.][0-9]*)?|([.][0-9]+))",
+  unsigned: "[+]?[0-9]+(([.][0-9]*)?|([.][0-9]+))",
   alphanumericFirstUpperCase: "[A-Z][0-9,A-Z,a-z]*",
   alphanumericFirstLowerCase: "[a-z][0-9,A-Z,a-z]*",
-  lnClass: "[A-Z]{4,4}"
+  lnClass: "(LLN0)|[A-Z]{4,4}"
 };
 export function compareNames(a, b) {
   if (typeof a === "string" && typeof b === "string")
     return a.localeCompare(b);
   if (typeof a === "object" && typeof b === "string")
-    return a.getAttribute("name").localeCompare(b);
+    return (a.getAttribute("name") ?? "").localeCompare(b);
   if (typeof a === "string" && typeof b === "object")
     return a.localeCompare(b.getAttribute("name"));
   if (typeof a === "object" && typeof b === "object")
-    return a.getAttribute("name").localeCompare(b.getAttribute("name"));
+    return (a.getAttribute("name") ?? "").localeCompare(b.getAttribute("name") ?? "");
   return 0;
 }
 export function unreachable(message) {
@@ -1803,6 +1848,27 @@ export function unreachable(message) {
 }
 export function crossProduct(...arrays) {
   return arrays.reduce((a, b) => a.flatMap((d) => b.map((e) => [d, e].flat())), [[]]);
+}
+export function depth(t, mem = new WeakSet()) {
+  if (mem.has(t))
+    return Infinity;
+  else
+    switch (t?.constructor) {
+      case Object:
+      case Array:
+        mem.add(t);
+        return 1 + Math.max(-1, ...Object.values(t).map((_) => depth(_, mem)));
+      default:
+        return 0;
+    }
+}
+export function getUniqueElementName(parent, tagName, iteration = 1) {
+  const newName = "new" + tagName + iteration;
+  const child = parent.querySelector(`:scope > ${tagName}[name="${newName}"]`);
+  if (!child)
+    return newName;
+  else
+    return getUniqueElementName(parent, tagName, ++iteration);
 }
 export function findFCDAs(extRef) {
   if (extRef.tagName !== "ExtRef" || extRef.closest("Private"))
@@ -1849,4 +1915,21 @@ export function getChildElementsByTagName(element, tag) {
   if (!element || !tag)
     return [];
   return Array.from(element.children).filter((element2) => element2.tagName === tag);
+}
+const maxLnInst = 99;
+const lnInstRange = Array(maxLnInst).fill(1).map((_, i) => `${i + 1}`);
+export function newLnInstGenerator(parent) {
+  const generators = new Map();
+  return (lnClass) => {
+    if (!generators.has(lnClass)) {
+      const lnInsts = new Set(getChildElementsByTagName(parent, "LNode").filter((lnode) => lnode.getAttribute("lnClass") === lnClass).map((lNode) => lNode.getAttribute("lnInst")));
+      generators.set(lnClass, () => {
+        const uniqueLnInst = lnInstRange.find((lnInst) => !lnInsts.has(lnInst));
+        if (uniqueLnInst)
+          lnInsts.add(uniqueLnInst);
+        return uniqueLnInst;
+      });
+    }
+    return generators.get(lnClass)();
+  };
 }

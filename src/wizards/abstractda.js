@@ -1,9 +1,15 @@
 import {html, render} from "../../_snowpack/pkg/lit-html.js";
 import {translate} from "../../_snowpack/pkg/lit-translate.js";
+import "../../_snowpack/pkg/@material/mwc-list/mwc-list-item.js";
+import "../wizard-checkbox.js";
+import "../wizard-select.js";
+import "../wizard-textfield.js";
 import {createElement} from "../foundation.js";
 import {maxLength, patterns} from "./foundation/limits.js";
 import {predefinedBasicTypeEnum, valKindEnum} from "./foundation/enums.js";
 function selectType(e, data, Val) {
+  if (!e.target || !e.target.parentElement)
+    return;
   const typeSelected = e.target.selected?.value;
   const selectedBType = e.target.parentElement.querySelector('wizard-select[label="bType"]').value;
   if (selectedBType !== "Enum")
@@ -109,17 +115,13 @@ export function wizardContent(name, desc, bType, types, type, sAddr, valKind, va
             >${valKindOption}</mwc-list-item
           >`)}</wizard-select
     >`,
-    html`<wizard-select
+    html`<wizard-checkbox
       label="valImport"
       .maybeValue=${valImport}
       helper="${translate("scl.valImport")}"
       nullable
       required
-      fixedMenuPosition
-      >${["true", "false"].map((valImportOption) => html`<mwc-list-item value="${valImportOption}"
-            >${valImportOption}</mwc-list-item
-          >`)}</wizard-select
-    >`,
+    ></wizard-checkbox>`,
     html`<wizard-select
       label="Val"
       .maybeValue=${Val}

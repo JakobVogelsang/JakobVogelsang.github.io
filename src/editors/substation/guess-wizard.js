@@ -1,9 +1,10 @@
-import {html} from "../../../_snowpack/pkg/lit-html.js";
+import {html} from "../../../_snowpack/pkg/lit-element.js";
 import {get, translate} from "../../../_snowpack/pkg/lit-translate.js";
+import "../../../_snowpack/pkg/@material/mwc-list.js";
+import "../../../_snowpack/pkg/@material/mwc-list/mwc-check-list-item.js";
 import {
   compareNames,
-  createElement,
-  getReference
+  createElement
 } from "../../foundation.js";
 let bayNum = 1;
 let cbNum = 1;
@@ -89,8 +90,7 @@ function guessBasedOnCSWI(doc) {
     actions.push({
       new: {
         parent: substation,
-        element: voltageLevel,
-        reference: getReference(substation, "VoltageLevel")
+        element: voltageLevel
       }
     });
     return actions;

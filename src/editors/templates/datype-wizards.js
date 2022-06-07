@@ -1,21 +1,58 @@
 import {html} from "../../../_snowpack/pkg/lit-element.js";
 import {get, translate} from "../../../_snowpack/pkg/lit-translate.js";
+import "../../../_snowpack/pkg/@material/mwc-button.js";
+import "../../../_snowpack/pkg/@material/mwc-list.js";
+import "../../../_snowpack/pkg/@material/mwc-list/mwc-list-item.js";
+import "../../../_snowpack/pkg/@material/mwc-select.js";
+import "../../wizard-textfield.js";
 import {
-  getReference,
+  cloneElement,
+  createElement,
   getValue,
   identity,
   newActionEvent,
+  newSubWizardEvent,
   newWizardEvent,
   patterns,
   selector
 } from "../../foundation.js";
+import {createBDAWizard, editBDAWizard} from "../../wizards/bda.js";
 import {
   addReferencedDataTypes,
   allDataTypeSelector,
-  unifyCreateActionArray,
-  updateIDNamingAction
+  unifyCreateActionArray
 } from "./foundation.js";
-import {createBDAWizard, editBDAWizard} from "../../wizards/bda.js";
+function remove(element) {
+  return (wizard) => {
+    wizard.dispatchEvent(newActionEvent({old: {parent: element.parentElement, element}}));
+    wizard.dispatchEvent(newWizardEvent());
+  };
+}
+function openAddBda(parent) {
+  return (wizard) => {
+    wizard.dispatchEvent(newSubWizardEvent(() => createBDAWizard(parent)));
+  };
+}
+function updateDATpyeAction(element) {
+  return (inputs) => {
+    const id = getValue(inputs.find((i) => i.label === "id"));
+    const desc = getValue(inputs.find((i) => i.label === "desc"));
+    if (id === element.getAttribute("id") && desc === element.getAttribute("desc"))
+      return [];
+    const newElement = cloneElement(element, {id, desc});
+    const actions = [];
+    actions.push({old: {element}, new: {element: newElement}});
+    const oldId = element.getAttribute("id");
+    Array.from(element.ownerDocument.querySelectorAll(`DOType > DA[type="${oldId}"], DAType > BDA[type="${oldId}"]`)).forEach((oldDa) => {
+      const newDa = oldDa.cloneNode(false);
+      newDa.setAttribute("type", id);
+      actions.push({old: {element: oldDa}, new: {element: newDa}});
+    });
+    return [
+      {title: get("datype.action.edit", {oldId, newId: id}), actions}
+    ];
+  };
+}
 export function editDaTypeWizard(dATypeIdentity, doc) {
   const datype = doc.querySelector(selector("DAType", dATypeIdentity));
   if (!datype)
@@ -29,25 +66,21 @@ export function editDaTypeWizard(dATypeIdentity, doc) {
       primary: {
         icon: "",
         label: get("save"),
-        action: updateIDNamingAction(datype)
+        action: updateDATpyeAction(datype)
       },
+      menuActions: [
+        {
+          label: get("remove"),
+          icon: "delete",
+          action: remove(datype)
+        },
+        {
+          label: get("scl.DA"),
+          icon: "playlist_add",
+          action: openAddBda(datype)
+        }
+      ],
       content: [
-        html`<mwc-button
-          icon="delete"
-          trailingIcon
-          label="${translate("remove")}"
-          @click=${(e) => {
-          e.target.dispatchEvent(newWizardEvent());
-          e.target.dispatchEvent(newActionEvent({
-            old: {
-              parent: datype.parentElement,
-              element: datype,
-              reference: datype.nextSibling
-            }
-          }));
-        }}
-          fullwidth
-        ></mwc-button> `,
         html`<wizard-textfield
           label="id"
           helper="${translate("scl.id")}"
@@ -65,37 +98,22 @@ export function editDaTypeWizard(dATypeIdentity, doc) {
           nullable
           pattern="${patterns.normalizedString}"
         ></wizard-textfield>`,
-        html`<mwc-button
-            slot="graphic"
-            icon="playlist_add"
-            trailingIcon
-            label="${translate("scl.DA")}"
-            @click=${(e) => {
-          if (datype)
-            e.target.dispatchEvent(newWizardEvent(createBDAWizard(datype)));
-          e.target.dispatchEvent(newWizardEvent());
-        }}
-          ></mwc-button>
-          <mwc-list
-            style="margin-top: 0px;"
-            @selected=${(e) => {
+        html`<mwc-list
+          style="margin-top: 0px;"
+          @selected=${(e) => {
           const bdaIdentity = e.target.selected.value;
           const bda = doc.querySelector(selector("BDA", bdaIdentity));
           if (bda)
-            e.target.dispatchEvent(newWizardEvent(editBDAWizard(bda)));
-          e.target.dispatchEvent(newWizardEvent());
+            e.target.dispatchEvent(newSubWizardEvent(editBDAWizard(bda)));
         }}
-          >
-            ${Array.from(datype.querySelectorAll("BDA")).map((bda) => html`<mwc-list-item
-                  twoline
-                  tabindex="0"
-                  value="${identity(bda)}"
-                  ><span>${bda.getAttribute("name")}</span
-                  ><span slot="secondary"
-                    >${bda.getAttribute("bType") === "Enum" || bda.getAttribute("bType") === "Struct" ? "#" + bda.getAttribute("type") : bda.getAttribute("bType")}</span
-                  ></mwc-list-item
-                >`)}
-          </mwc-list> `
+        >
+          ${Array.from(datype.querySelectorAll("BDA")).map((bda) => html`<mwc-list-item twoline tabindex="0" value="${identity(bda)}"
+                ><span>${bda.getAttribute("name")}</span
+                ><span slot="secondary"
+                  >${bda.getAttribute("bType") === "Enum" || bda.getAttribute("bType") === "Struct" ? "#" + bda.getAttribute("type") : bda.getAttribute("bType")}</span
+                ></mwc-list-item
+              >`)}
+        </mwc-list> `
       ]
     }
   ];
@@ -111,7 +129,7 @@ function addPredefinedDAType(parent, templates) {
     const desc = getValue(inputs.find((i) => i.label === "desc"));
     const values = inputs.find((i) => i.label === "values");
     const selectedElement = values.selected ? templates.querySelector(`DAType[id="${values.selected.value}"]`) : null;
-    const element = values.selected ? selectedElement.cloneNode(true) : parent.ownerDocument.createElement("DAType");
+    const element = values.selected ? selectedElement.cloneNode(true) : createElement(parent.ownerDocument, "DAType", {});
     element.setAttribute("id", id);
     if (desc)
       element.setAttribute("desc", desc);
@@ -121,8 +139,7 @@ function addPredefinedDAType(parent, templates) {
     actions.push({
       new: {
         parent,
-        element,
-        reference: getReference(parent, element.tagName)
+        element
       }
     });
     return unifyCreateActionArray(actions);

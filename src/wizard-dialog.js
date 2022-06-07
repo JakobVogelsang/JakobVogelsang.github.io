@@ -16,21 +16,76 @@ import {
   LitElement,
   property,
   internalProperty,
-  html
+  TemplateResult,
+  html,
+  query
 } from "../_snowpack/pkg/lit-element.js";
+import {ifDefined} from "../_snowpack/pkg/lit-html/directives/if-defined.js";
 import {get, translate} from "../_snowpack/pkg/lit-translate.js";
+import "../_snowpack/pkg/@material/mwc-button.js";
+import "../_snowpack/pkg/@material/mwc-dialog.js";
+import "../_snowpack/pkg/@material/mwc-icon-button.js";
+import "../_snowpack/pkg/@material/mwc-icon-button-toggle.js";
+import "../_snowpack/pkg/@material/mwc-menu.js";
 import {Dialog} from "../_snowpack/pkg/@material/mwc-dialog.js";
 import "../_snowpack/pkg/ace-custom-element.js";
+import "./wizard-checkbox.js";
 import "./wizard-textfield.js";
+import "./wizard-select.js";
 import {
   newActionEvent,
   newWizardEvent,
   wizardInputSelector,
-  isWizard,
+  isWizardFactory,
   checkValidity,
   reportValidity,
   identity
 } from "./foundation.js";
+function renderWizardInput(input) {
+  if (input instanceof TemplateResult)
+    return input;
+  if (input.kind === "Checkbox")
+    return html`<wizard-checkbox
+      ?nullable=${input.nullable}
+      ?defaultChecked=${input.default}
+      ?dialogInitialFocus=${input.dialogInitialFocus}
+      label="${input.label}"
+      helper="${ifDefined(input.helper)}"
+      .maybeValue=${input.maybeValue}
+    ></wizard-checkbox>`;
+  if (input.kind === "Select")
+    return html`<wizard-select
+      ?nullable=${input.nullable}
+      ?dialogInitialFocus=${input.dialogInitialFocus}
+      label="${input.label}"
+      helper="${ifDefined(input.helper)}"
+      defaultValue="${ifDefined(input.default)}"
+      validationMessage="${ifDefined(input.valadationMessage)}"
+      .maybeValue=${input.maybeValue}
+      >${input.values.map((value) => html`<mwc-list-item value="${value}">${value}</mwc-list-item>`)}</wizard-select
+    >`;
+  return html`<wizard-textfield
+    ?nullable=${input.nullable}
+    ?required=${input.required}
+    ?disabled=${input.disabled}
+    ?dialogInitialFocus=${input.dialogInitialFocus}
+    label="${input.label}"
+    defaultValue="${ifDefined(input.default)}"
+    helper="${ifDefined(input.helper)}"
+    validationMessage="${ifDefined(input.helper)}"
+    unit="${ifDefined(input.unit)}"
+    .multipliers=${input.multipliers ?? []}
+    .multiplier=${input.multiplier ?? null}
+    suffix="${ifDefined(input.suffix)}"
+    .maybeValue=${input.maybeValue}
+    pattern="${ifDefined(input.pattern)}"
+    minLength="${ifDefined(input.minLength)}"
+    maxLength="${ifDefined(input.maxLength)}"
+    type="${ifDefined(input.type)}"
+    min="${ifDefined(input.min)}"
+    max="${ifDefined(input.max)}"
+  ></wizard-textfield>`;
+}
 function dialogInputs(dialog) {
   return Array.from(dialog?.querySelectorAll(wizardInputSelector) ?? []);
 }
@@ -89,13 +144,16 @@ export let WizardDialog = class extends LitElement {
     return Array.from(this.dialogs).findIndex((dialog) => !dialogValid(dialog));
   }
   prev() {
-    if (this.pageIndex > 0)
-      this.pageIndex--;
+    if (this.pageIndex <= 0)
+      return;
+    this.pageIndex--;
+    this.dialog?.show();
   }
   async next() {
     if (dialogValid(this.dialog)) {
       if (this.wizard.length > this.pageIndex + 1)
         this.pageIndex++;
+      this.dialog?.show();
     } else {
       this.dialog?.show();
       await this.dialog?.updateComplete;
@@ -120,8 +178,13 @@ export let WizardDialog = class extends LitElement {
         this.wizard[this.pageIndex].secondary = void 0;
       this.dispatchEvent(newWizardEvent());
     }
-    wizardActions.forEach((wa) => isWizard(wa) ? this.dispatchEvent(newWizardEvent(wa())) : this.dispatchEvent(newActionEvent(wa)));
+    wizardActions.forEach((wa) => isWizardFactory(wa) ? this.dispatchEvent(newWizardEvent(wa)) : this.dispatchEvent(newActionEvent(wa)));
     return true;
+  }
+  async menuAct(action) {
+    if (!action)
+      return;
+    action(this);
   }
   onClosed(ae) {
     if (!(ae.target instanceof Dialog && ae.detail?.action))
@@ -145,19 +208,47 @@ export let WizardDialog = class extends LitElement {
     if (this.wizard[this.pageIndex]?.primary?.auto) {
       this.updateComplete.then(() => this.act(this.wizard[this.pageIndex].primary.action));
     }
+    if (this.actionsMenu)
+      this.actionsMenu.anchor = this.menuButton;
+  }
+  renderMenu(page) {
+    const someIconsDefined = page.menuActions?.some((menuAction) => menuAction.icon);
+    return html` <mwc-icon-button
+        icon="more_vert"
+        @click=${() => {
+      if (!this.actionsMenu.open)
+        this.actionsMenu.show();
+      else
+        this.actionsMenu.close();
+    }}
+      ></mwc-icon-button>
+      <mwc-menu class="actions-menu" corner="BOTTOM_RIGHT" menuCorner="END">
+        ${page.menuActions.map((menuAction) => html`<mwc-list-item
+              .graphic=${someIconsDefined ? "icon" : null}
+              @click=${() => this.menuAct(menuAction.action)}
+            >
+              <span>${menuAction.label}</span>
+              ${menuAction.icon ? html`<mwc-icon slot="graphic">${menuAction.icon}</mwc-icon>` : html``}
+            </mwc-list-item>`)}
+      </mwc-menu>`;
   }
   renderPage(page, index) {
+    const showCodeToggleButton = page.element && localStorage.getItem("mode") === "pro";
+    const extraWidth = showCodeToggleButton && page.menuActions ? 96 : showCodeToggleButton || page.menuActions ? 48 : 0;
     return html`<mwc-dialog
-      defaultAction="close"
-      ?open=${index === this.pageIndex}
+      defaultAction="next"
       heading=${page.title}
       @closed=${this.onClosed}
+      style="--mdc-dialog-min-width:calc(100% + ${extraWidth}px)"
     >
-      ${page.element && localStorage.getItem("mode") === "pro" ? html`<mwc-icon-button-toggle
-            onicon="code"
-            officon="code_off"
-            @click=${() => this.requestUpdate()}
-          ></mwc-icon-button-toggle>` : ""}
+      ${showCodeToggleButton || page.menuActions ? html`<nav>
+            ${showCodeToggleButton ? html`<mwc-icon-button-toggle
+                  onicon="code"
+                  officon="code_off"
+                  @click=${() => this.requestUpdate()}
+                ></mwc-icon-button-toggle>` : ""}
+            ${page.menuActions ? this.renderMenu(page) : ""}
+          </nav>` : ""}
       <div id="wizard-content">
         ${this.code && page.element ? html`<ace-editor
               base-path="/public/ace"
@@ -167,7 +258,7 @@ export let WizardDialog = class extends LitElement {
               theme="ace/theme/solarized_${localStorage.getItem("theme")}"
               mode="ace/mode/xml"
               value="${new XMLSerializer().serializeToString(page.element)}"
-            ></ace-editor>` : page.content}
+            ></ace-editor>` : page.content?.map(renderWizardInput)}
       </div>
       ${index > 0 ? html`<mwc-button
             slot="secondaryAction"
@@ -192,14 +283,12 @@ export let WizardDialog = class extends LitElement {
             icon="code"
             label="${translate("save")}"
             trailingIcon
-            dialogInitialFocus
           ></mwc-button>` : page.primary ? html`<mwc-button
             slot="primaryAction"
             @click=${() => this.act(page.primary?.action)}
             icon="${page.primary.icon}"
             label="${page.primary.label}"
             trailingIcon
-            dialogInitialFocus
           ></mwc-button>` : index + 1 < (this.wizard?.length ?? 0) ? html`<mwc-button
             slot="primaryAction"
             dialogAction="next"
@@ -218,14 +307,14 @@ WizardDialog.styles = css`
       --mdc-dialog-max-width: 92vw;
     }
 
-    mwc-dialog > mwc-icon-button-toggle {
+    mwc-dialog > nav {
       position: absolute;
       top: 8px;
       right: 14px;
       color: var(--base00);
     }
 
-    mwc-dialog > mwc-icon-button-toggle[on] {
+    mwc-dialog > nav > mwc-icon-button-toggle[on] {
       color: var(--mdc-theme-primary);
     }
 
@@ -255,6 +344,12 @@ __decorate([
 __decorate([
   queryAll(wizardInputSelector)
 ], WizardDialog.prototype, "inputs", 2);
+__decorate([
+  query(".actions-menu")
+], WizardDialog.prototype, "actionsMenu", 2);
+__decorate([
+  query('mwc-icon-button[icon="more_vert"]')
+], WizardDialog.prototype, "menuButton", 2);
 WizardDialog = __decorate([
   customElement("wizard-dialog")
 ], WizardDialog);

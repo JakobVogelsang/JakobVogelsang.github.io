@@ -1,8 +1,10 @@
 import {html, LitElement} from "../../_snowpack/pkg/lit-element.js";
 import {unsafeHTML} from "../../_snowpack/pkg/lit-html/directives/unsafe-html.js";
-import marked from "../../_snowpack/pkg/marked.js";
+import * as marked from "../../_snowpack/pkg/marked.js";
+import "../../_snowpack/pkg/@material/mwc-icon.js";
+import "../finder-list.js";
 import {newWizardEvent} from "../foundation.js";
-import {openSCDIcon} from "../icons.js";
+import {openSCDIcon} from "../icons/icons.js";
 function aboutBox(version) {
   return html`<div>
       <div style="display:flex">
@@ -32,28 +34,28 @@ function aboutBox(version) {
 async function getLinkedPages(path) {
   const edition = await (await fetch("/manifest.json")).json();
   if (path.length === 0) {
-    return {content: aboutBox(edition.version), children: ["Home"]};
+    return {path, header: aboutBox(edition.version), entries: ["Home"]};
   }
   const page = path[path.length - 1].replace(/ /g, "-");
   const res = await fetch(`/public/md/${page}.md`);
   const md = await res.text();
   const unlinkedMd = md.replace(/\[([^\]]*)\]\(https:..github.com.openscd.open-scd.wiki.([^)]*)\)/g, `<a style="cursor: help;" onclick="Array.from(event.target.closest('section').lastElementChild.children).find(child => child.text === '$2'.replace(/-/g, ' ')).click()">$1</a>`);
-  const content = html`<div style="padding: 8px;">
+  const header = html`<div style="padding: 8px;">
     ${page === "Home" ? aboutBox(edition.version) : html``}
-    ${unsafeHTML(marked(unlinkedMd))}
+    ${unsafeHTML(marked.parse(unlinkedMd))}
   </div>`;
-  const children = Array.from(md.matchAll(/\(https:..github.com.openscd.open-scd.wiki.([^)]*)\)/g)).map(([_, child]) => child.replace(/-/g, " "));
-  return {content, children};
+  const entries = Array.from(md.matchAll(/\(https:..github.com.openscd.open-scd.wiki.([^)]*)\)/g)).map(([_, child]) => child.replace(/-/g, " "));
+  return {path, header, entries};
 }
 export function aboutBoxWizard() {
   return [
     {
       title: "Help",
       content: [
-        html`<finder-pane
+        html`<finder-list
           .path=${["Home"]}
-          .getChildren=${getLinkedPages}
-        ></finder-pane>`
+          .read=${getLinkedPages}
+        ></finder-list>`
       ]
     }
   ];

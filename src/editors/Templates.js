@@ -11,15 +11,18 @@ var __decorate = (decorators, target, key, kind) => {
 };
 import {LitElement, html, property, css} from "../../_snowpack/pkg/lit-element.js";
 import {translate} from "../../_snowpack/pkg/lit-translate.js";
+import "../../_snowpack/pkg/@material/mwc-fab.js";
+import "../../_snowpack/pkg/@material/mwc-icon-button.js";
+import "../../_snowpack/pkg/@material/mwc-list.js";
+import "../../_snowpack/pkg/@material/mwc-list/mwc-list-item.js";
+import "../filtered-list.js";
 import {
   createElement,
-  getReference,
   identity,
   newActionEvent,
   newWizardEvent
 } from "../foundation.js";
 import {styles} from "./templates/foundation.js";
-import "../filtered-list.js";
 import {
   createEnumTypeWizard,
   eNumTypeEditWizard
@@ -38,15 +41,16 @@ import {
 } from "./templates/lnodetype-wizard.js";
 const templates = fetch("public/xml/templates.scd").then((response) => response.text()).then((str) => new DOMParser().parseFromString(str, "application/xml"));
 const nsd74 = fetch("public/xml/IEC_61850-7-4_2007B3.nsd").then((response) => response.text()).then((str) => new DOMParser().parseFromString(str, "application/xml"));
+const nsd7420 = fetch("public/xml/IEC_61850-7-420_2019A4.nsd").then((response) => response.text()).then((str) => new DOMParser().parseFromString(str, "application/xml"));
 export default class TemplatesPlugin extends LitElement {
   async openCreateLNodeTypeWizard() {
     this.createDataTypeTemplates();
-    this.dispatchEvent(newWizardEvent(createLNodeTypeWizard(this.doc.querySelector(":root > DataTypeTemplates"), await templates, await nsd74)));
+    this.dispatchEvent(newWizardEvent(createLNodeTypeWizard(this.doc.querySelector(":root > DataTypeTemplates"), await templates, await nsd74, await nsd7420)));
   }
   openLNodeTypeWizard(identity2) {
     const wizard = lNodeTypeWizard(identity2, this.doc);
     if (wizard)
-      this.dispatchEvent(newWizardEvent(wizard));
+      this.dispatchEvent(newWizardEvent(() => lNodeTypeWizard(identity2, this.doc)));
   }
   async openCreateDOTypeWizard() {
     this.createDataTypeTemplates();
@@ -55,12 +59,12 @@ export default class TemplatesPlugin extends LitElement {
   openDOTypeWizard(identity2) {
     const wizard = dOTypeWizard(identity2, this.doc);
     if (wizard)
-      this.dispatchEvent(newWizardEvent(wizard));
+      this.dispatchEvent(newWizardEvent(() => dOTypeWizard(identity2, this.doc)));
   }
   openDATypeWizard(identity2) {
     const wizard = editDaTypeWizard(identity2, this.doc);
     if (wizard)
-      this.dispatchEvent(newWizardEvent(wizard));
+      this.dispatchEvent(newWizardEvent(() => editDaTypeWizard(identity2, this.doc)));
   }
   async openCreateDATypeWizard() {
     this.createDataTypeTemplates();
@@ -69,7 +73,7 @@ export default class TemplatesPlugin extends LitElement {
   openEnumTypeWizard(identity2) {
     const wizard = eNumTypeEditWizard(identity2, this.doc);
     if (wizard)
-      this.dispatchEvent(newWizardEvent(wizard));
+      this.dispatchEvent(newWizardEvent(() => eNumTypeEditWizard(identity2, this.doc)));
   }
   async openCreateEnumWizard() {
     this.createDataTypeTemplates();
@@ -80,8 +84,7 @@ export default class TemplatesPlugin extends LitElement {
       this.dispatchEvent(newActionEvent({
         new: {
           parent: this.doc.documentElement,
-          element: createElement(this.doc, "DataTypeTemplates", {}),
-          reference: getReference(this.doc.documentElement, "DataTypeTemplates")
+          element: createElement(this.doc, "DataTypeTemplates", {})
         }
       }));
   }

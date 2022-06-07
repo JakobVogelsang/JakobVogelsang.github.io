@@ -1,14 +1,16 @@
 import {html} from "../../_snowpack/pkg/lit-element.js";
 import {get} from "../../_snowpack/pkg/lit-translate.js";
+import "../../_snowpack/pkg/@material/mwc-list/mwc-check-list-item.js";
+import "../../_snowpack/pkg/@material/mwc-icon.js";
+import "../filtered-list.js";
 import {
   createElement,
-  getReference,
   identity,
   pathParts,
   selector
 } from "../foundation.js";
+import {clientIcon} from "../icons/icons.js";
 import {openCommunicationMappingWizard} from "./commmap-wizards.js";
-import {clientIcon} from "../icons.js";
 function getPath(identity2) {
   if (typeof identity2 !== "string")
     return "";
@@ -95,8 +97,7 @@ function addClientLnAction(doc) {
           actions.push({
             new: {
               parent: cb.querySelector("RptEnabled"),
-              element,
-              reference: getReference(cb.querySelector("RptEnabled"), "ClientLN")
+              element
             }
           });
         }

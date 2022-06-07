@@ -1,13 +1,15 @@
 import {html} from "../../_snowpack/pkg/lit-element.js";
 import {get, translate} from "../../_snowpack/pkg/lit-translate.js";
+import "../../_snowpack/pkg/@material/mwc-checkbox.js";
+import "../../_snowpack/pkg/@material/mwc-formfield.js";
+import "../wizard-textfield.js";
 import {
   createElement,
-  getReference,
   getValue,
   newWizardEvent
 } from "../foundation.js";
-import {updateNamingAction} from "./foundation/actions.js";
 import {guessVoltageLevel} from "../editors/substation/guess-wizard.js";
+import {updateNamingAttributeWithReferencesAction} from "./foundation/actions.js";
 function render(name, desc, guessable) {
   return [
     html`<wizard-textfield
@@ -42,8 +44,7 @@ export function createAction(parent) {
     const action = {
       new: {
         parent,
-        element,
-        reference: getReference(parent, "Substation")
+        element
       }
     };
     if (guess)
@@ -74,7 +75,7 @@ export function substationEditWizard(element) {
       primary: {
         icon: "edit",
         label: get("save"),
-        action: updateNamingAction(element)
+        action: updateNamingAttributeWithReferencesAction(element, "substation.action.updatesubstation")
       },
       content: render(element.getAttribute("name") ?? "", element.getAttribute("desc"), false)
     }

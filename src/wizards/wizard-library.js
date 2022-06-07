@@ -3,12 +3,36 @@ import {
   createConductingEquipmentWizard,
   editConductingEquipmentWizard
 } from "./conductingequipment.js";
-import {lNodeWizard} from "./lnode.js";
+import {editConnectivityNodeWizard} from "./connectivitynode.js";
+import {createFCDAsWizard} from "./fcda.js";
+import {editLNodeWizard, lNodeWizard} from "./lnode.js";
+import {editOptFieldsWizard} from "./optfields.js";
 import {createSubstationWizard, substationEditWizard} from "./substation.js";
+import {editTerminalWizard} from "./terminal.js";
 import {
   voltageLevelCreateWizard,
   voltageLevelEditWizard
 } from "./voltagelevel.js";
+import {
+  createPowerTransformerWizard,
+  editPowerTransformerWizard
+} from "./powertransformer.js";
+import {editSubNetworkWizard} from "./subnetwork.js";
+import {editIEDWizard} from "./ied.js";
+import {editTrgOpsWizard} from "./trgops.js";
+import {createDaWizard} from "./da.js";
+import {editDAIWizard} from "./dai.js";
+import {editGseControlWizard} from "./gsecontrol.js";
+import {createFunctionWizard, editFunctionWizard} from "./function.js";
+import {
+  createEqSubFunctionWizard,
+  editEqSubFunctionWizard
+} from "./eqsubfunction.js";
+import {createEqFunctionWizard, editEqFunctionWizard} from "./eqfunction.js";
+import {
+  createSubFunctionWizard,
+  editSubFunctionWizard
+} from "./subfunction.js";
 export function emptyWizard() {
   return;
 }
@@ -98,15 +122,15 @@ export const wizards = {
     create: emptyWizard
   },
   ConnectivityNode: {
-    edit: emptyWizard,
+    edit: editConnectivityNodeWizard,
     create: emptyWizard
   },
   DA: {
-    edit: emptyWizard,
+    edit: createDaWizard,
     create: emptyWizard
   },
   DAI: {
-    edit: emptyWizard,
+    edit: editDAIWizard,
     create: emptyWizard
   },
   DAType: {
@@ -158,12 +182,12 @@ export const wizards = {
     create: emptyWizard
   },
   EqFunction: {
-    edit: emptyWizard,
-    create: emptyWizard
+    edit: editEqFunctionWizard,
+    create: createEqFunctionWizard
   },
   EqSubFunction: {
-    edit: emptyWizard,
-    create: emptyWizard
+    edit: editEqSubFunctionWizard,
+    create: createEqSubFunctionWizard
   },
   ExtRef: {
     edit: emptyWizard,
@@ -171,15 +195,15 @@ export const wizards = {
   },
   FCDA: {
     edit: emptyWizard,
-    create: emptyWizard
+    create: createFCDAsWizard
   },
   FileHandling: {
     edit: emptyWizard,
     create: emptyWizard
   },
   Function: {
-    edit: emptyWizard,
-    create: emptyWizard
+    edit: editFunctionWizard,
+    create: createFunctionWizard
   },
   GeneralEquipment: {
     edit: emptyWizard,
@@ -218,7 +242,7 @@ export const wizards = {
     create: emptyWizard
   },
   GSEControl: {
-    edit: emptyWizard,
+    edit: editGseControlWizard,
     create: emptyWizard
   },
   GSESettings: {
@@ -242,7 +266,7 @@ export const wizards = {
     create: emptyWizard
   },
   IED: {
-    edit: emptyWizard,
+    edit: editIEDWizard,
     create: emptyWizard
   },
   IEDName: {
@@ -274,7 +298,7 @@ export const wizards = {
     create: emptyWizard
   },
   LNode: {
-    edit: lNodeWizard,
+    edit: editLNodeWizard,
     create: lNodeWizard
   },
   LNodeType: {
@@ -314,7 +338,7 @@ export const wizards = {
     create: emptyWizard
   },
   OptFields: {
-    edit: emptyWizard,
+    edit: editOptFieldsWizard,
     create: emptyWizard
   },
   P: {
@@ -326,8 +350,8 @@ export const wizards = {
     create: emptyWizard
   },
   PowerTransformer: {
-    edit: emptyWizard,
-    create: emptyWizard
+    edit: editPowerTransformerWizard,
+    create: createPowerTransformerWizard
   },
   Private: {
     edit: emptyWizard,
@@ -446,11 +470,11 @@ export const wizards = {
     create: emptyWizard
   },
   SubFunction: {
-    edit: emptyWizard,
-    create: emptyWizard
+    edit: editSubFunctionWizard,
+    create: createSubFunctionWizard
   },
   SubNetwork: {
-    edit: emptyWizard,
+    edit: editSubNetworkWizard,
     create: emptyWizard
   },
   Subject: {
@@ -470,7 +494,7 @@ export const wizards = {
     create: emptyWizard
   },
   Terminal: {
-    edit: emptyWizard,
+    edit: editTerminalWizard,
     create: emptyWizard
   },
   Text: {
@@ -490,7 +514,7 @@ export const wizards = {
     create: emptyWizard
   },
   TrgOps: {
-    edit: emptyWizard,
+    edit: editTrgOpsWizard,
     create: emptyWizard
   },
   Val: {

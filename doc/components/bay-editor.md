@@ -4,11 +4,15 @@
 
 ## Properties
 
-| Property          | Attribute  | Type                                             | Default                        |
-|-------------------|------------|--------------------------------------------------|--------------------------------|
-| `element`         |            | `Element`                                        |                                |
-| `getAttachedIeds` |            | `((element: Element) => Element[]) \| undefined` | "() => {\n    return [];\n  }" |
-| `readonly`        | `readonly` | `boolean`                                        | false                          |
+| Property          | Attribute       | Modifiers | Type                                             | Default                        | Description                                      |
+|-------------------|-----------------|-----------|--------------------------------------------------|--------------------------------|--------------------------------------------------|
+| `addButton`       |                 |           | `IconButton`                                     |                                |                                                  |
+| `addMenu`         |                 |           | `Menu`                                           |                                |                                                  |
+| `element`         |                 |           | `Element`                                        |                                |                                                  |
+| `getAttachedIeds` |                 |           | `((element: Element) => Element[]) \| undefined` | "() => {\n    return [];\n  }" |                                                  |
+| `header`          | `header`        | readonly  | `string`                                         |                                |                                                  |
+| `readonly`        | `readonly`      |           | `boolean`                                        | false                          |                                                  |
+| `showfunctions`   | `showfunctions` |           | `boolean`                                        | false                          | Whether `Function` and `SubFunction` are rendered |
 
 ## Methods
 
@@ -17,4 +21,5 @@
 | `openEditWizard`     | `(): void`           |                                                  |
 | `openLNodeWizard`    | `(): void`           | Opens a [[`WizardDialog`]] for editing `LNode` connections. |
 | `remove`             | `(): void`           |                                                  |
+| `renderFunctions`    | `(): TemplateResult` |                                                  |
 | `renderIedContainer` | `(): TemplateResult` |                                                  |

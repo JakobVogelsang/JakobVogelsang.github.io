@@ -1,23 +1,34 @@
 import {html} from "../../../_snowpack/pkg/lit-html.js";
 import {get, translate} from "../../../_snowpack/pkg/lit-translate.js";
+import "../../../_snowpack/pkg/@material/mwc-button.js";
+import "../../../_snowpack/pkg/@material/mwc-list.js";
+import "../../../_snowpack/pkg/@material/mwc-list/mwc-list-item.js";
+import "../../../_snowpack/pkg/@material/mwc-select.js";
+import "../../wizard-textfield.js";
 import {
   cloneElement,
   createElement,
-  getReference,
   getValue,
   identity,
   isPublic,
   newActionEvent,
+  newSubWizardEvent,
   newWizardEvent,
   selector
 } from "../../foundation.js";
+import {createDaWizard, editDAWizard} from "../../wizards/da.js";
+import {patterns} from "../../wizards/foundation/limits.js";
 import {
   addReferencedDataTypes,
   allDataTypeSelector,
   unifyCreateActionArray
 } from "./foundation.js";
-import {createDaWizard, editDAWizard} from "../../wizards/da.js";
-import {patterns} from "../../wizards/foundation/limits.js";
+function remove(element) {
+  return (wizard) => {
+    wizard.dispatchEvent(newActionEvent({old: {parent: element.parentElement, element}}));
+    wizard.dispatchEvent(newWizardEvent());
+  };
+}
 function updateSDoAction(element) {
   return (inputs) => {
     const name = getValue(inputs.find((i) => i.label === "name"));
@@ -46,8 +57,7 @@ function createSDoAction(parent) {
     actions.push({
       new: {
         parent,
-        element,
-        reference: getReference(parent, element.tagName)
+        element
       }
     });
     return actions;
@@ -56,33 +66,18 @@ function createSDoAction(parent) {
 function sDOWizard(options) {
   const doc = options.doc ? options.doc : options.parent.ownerDocument;
   const sdo = Array.from(doc.querySelectorAll(selector("SDO", options.identity ?? NaN))).find(isPublic) ?? null;
-  const [title, action, type, deleteButton, name, desc] = sdo ? [
+  const [title, action, type, menuActions, name, desc] = sdo ? [
     get("sdo.wizard.title.edit"),
     updateSDoAction(sdo),
     sdo.getAttribute("type"),
-    html`<mwc-button
-          icon="delete"
-          trailingIcon
-          label="${translate("remove")}"
-          @click=${(e) => {
-      e.target.dispatchEvent(newWizardEvent());
-      e.target.dispatchEvent(newActionEvent({
-        old: {
-          parent: sdo.parentElement,
-          element: sdo,
-          reference: sdo.nextSibling
-        }
-      }));
-    }}
-          fullwidth
-        ></mwc-button> `,
+    [{icon: "delete", label: get("remove"), action: remove(sdo)}],
     sdo.getAttribute("name"),
     sdo.getAttribute("desc")
   ] : [
     get("sdo.wizard.title.add"),
     createSDoAction(options.parent),
     null,
-    html``,
+    void 0,
     "",
     null
   ];
@@ -92,8 +87,8 @@ function sDOWizard(options) {
       title,
       element: sdo ?? void 0,
       primary: {icon: "", label: get("save"), action},
+      menuActions,
       content: [
-        deleteButton,
         html`<wizard-textfield
           label="name"
           .maybeValue=${name}
@@ -138,7 +133,7 @@ function addPredefinedDOType(parent, templates) {
     const cdc = getValue(inputs.find((i) => i.label === "cdc"));
     const values = inputs.find((i) => i.label === "values");
     const selectedElement = values.selected ? templates.querySelector(`DOType[id="${values.selected.value}"]`) : null;
-    const element = values.selected ? selectedElement.cloneNode(true) : parent.ownerDocument.createElement("DOType");
+    const element = values.selected ? selectedElement.cloneNode(true) : createElement(parent.ownerDocument, "DOType", {});
     element.setAttribute("id", id);
     element.setAttribute("cdc", cdc);
     if (desc)
@@ -149,8 +144,7 @@ function addPredefinedDOType(parent, templates) {
     actions.push({
       new: {
         parent,
-        element,
-        reference: getReference(parent, element.tagName)
+        element
       }
     });
     return unifyCreateActionArray(actions);
@@ -221,6 +215,16 @@ export function createDOTypeWizard(parent, templates) {
     }
   ];
 }
+function openAddSdo(parent) {
+  return (wizard) => {
+    wizard.dispatchEvent(newSubWizardEvent(() => sDOWizard({parent})));
+  };
+}
+function openAddDa(parent) {
+  return (wizard) => {
+    wizard.dispatchEvent(newSubWizardEvent(() => createDaWizard(parent)));
+  };
+}
 function updateDOTypeAction(element) {
   return (inputs) => {
     const id = getValue(inputs.find((i) => i.label === "id"));
@@ -229,7 +233,17 @@ function updateDOTypeAction(element) {
     if (id === element.getAttribute("id") && desc === element.getAttribute("desc") && cdc == element.getAttribute("cdc"))
       return [];
     const newElement = cloneElement(element, {id, desc, cdc});
-    return [{old: {element}, new: {element: newElement}}];
+    const actions = [];
+    actions.push({old: {element}, new: {element: newElement}});
+    const oldId = element.getAttribute("id");
+    Array.from(element.ownerDocument.querySelectorAll(`LNodeType > DO[type="${oldId}"], DOType > SDO[type="${oldId}"]`)).forEach((oldDo) => {
+      const newDo = oldDo.cloneNode(false);
+      newDo.setAttribute("type", id);
+      actions.push({old: {element: oldDo}, new: {element: newDo}});
+    });
+    return [
+      {title: get("dotype.action.edit", {oldId, newId: id}), actions}
+    ];
   };
 }
 export function dOTypeWizard(dOTypeIdentity, doc) {
@@ -245,23 +259,24 @@ export function dOTypeWizard(dOTypeIdentity, doc) {
         label: get("save"),
         action: updateDOTypeAction(dotype)
       },
+      menuActions: [
+        {
+          label: get("remove"),
+          icon: "delete",
+          action: remove(dotype)
+        },
+        {
+          label: get("scl.DO"),
+          icon: "playlist_add",
+          action: openAddSdo(dotype)
+        },
+        {
+          label: get("scl.DA"),
+          icon: "playlist_add",
+          action: openAddDa(dotype)
+        }
+      ],
       content: [
-        html`<mwc-button
-          icon="delete"
-          trailingIcon
-          label="${translate("remove")}"
-          @click=${(e) => {
-          e.target.dispatchEvent(newWizardEvent());
-          e.target.dispatchEvent(newActionEvent({
-            old: {
-              parent: dotype.parentElement,
-              element: dotype,
-              reference: dotype.nextSibling
-            }
-          }));
-        }}
-          fullwidth
-        ></mwc-button> `,
         html`<wizard-textfield
           label="id"
           helper="${translate("scl.id")}"
@@ -285,33 +300,6 @@ export function dOTypeWizard(dOTypeIdentity, doc) {
           .maybeValue=${dotype.getAttribute("cdc")}
           pattern="${patterns.normalizedString}"
         ></wizard-textfield>`,
-        html`<section>
-          <mwc-button
-            slot="graphic"
-            icon="playlist_add"
-            trailingIcon
-            label="${translate("scl.DO")}"
-            @click=${(e) => {
-          const wizard = sDOWizard({
-            parent: dotype
-          });
-          if (wizard)
-            e.target.dispatchEvent(newWizardEvent(wizard));
-          e.target.dispatchEvent(newWizardEvent());
-        }}
-          ></mwc-button>
-          <mwc-button
-            slot="graphic"
-            icon="playlist_add"
-            trailingIcon
-            label="${translate("scl.DA")}"
-            @click=${(e) => {
-          if (dotype)
-            e.target.dispatchEvent(newWizardEvent(createDaWizard(dotype)));
-          e.target.dispatchEvent(newWizardEvent());
-        }}
-          ></mwc-button>
-        </section>`,
         html`
           <mwc-list
             style="margin-top: 0px;"
@@ -324,8 +312,7 @@ export function dOTypeWizard(dOTypeIdentity, doc) {
             doc
           });
           if (wizard)
-            e.target.dispatchEvent(newWizardEvent(wizard));
-          e.target.dispatchEvent(newWizardEvent());
+            e.target.dispatchEvent(newSubWizardEvent(wizard));
         }}
           >
             ${Array.from(dotype.querySelectorAll("SDO, DA")).map((daorsdo) => html`<mwc-list-item

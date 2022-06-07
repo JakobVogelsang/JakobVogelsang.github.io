@@ -4,14 +4,13 @@
 
 ## Properties
 
-| Property  | Attribute | Modifiers | Type             |
-|-----------|-----------|-----------|------------------|
-| `apName`  | `apName`  | readonly  | `string \| null` |
-| `element` | `element` |           | `Element`        |
+| Property  | Attribute | Modifiers | Type      | Description                  |
+|-----------|-----------|-----------|-----------|------------------------------|
+| `apName`  | `apName`  | readonly  | `string`  | ConnectedAP attribute apName |
+| `element` |           |           | `Element` | SCL element ConnectedAP      |
 
 ## Methods
 
-| Method           | Type       |
-|------------------|------------|
-| `openEditWizard` | `(): void` |
-| `remove`         | `(): void` |
+| Method   | Type       |
+|----------|------------|
+| `remove` | `(): void` |

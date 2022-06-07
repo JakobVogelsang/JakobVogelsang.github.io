@@ -2,7 +2,6 @@ import {LitElement} from "../../_snowpack/pkg/lit-element.js";
 import {get} from "../../_snowpack/pkg/lit-translate.js";
 import {
   createElement,
-  getReference,
   getVersion,
   newActionEvent
 } from "../foundation.js";
@@ -27,7 +26,7 @@ function addIEDName(extRef, gseControl) {
       ldInst: lDevice.getAttribute("inst") ?? "",
       prefix: anyln.getAttribute("prefix") ?? "",
       lnClass: anyln.getAttribute("lnClass") ?? "",
-      lnInst: anyln.getAttribute("inst") ?? ""
+      lnInst: anyln.getAttribute("inst") || null
     });
     iedName.innerHTML = ied.getAttribute("name");
     return iedName;
@@ -56,8 +55,7 @@ export function createMissingIEDNameSubscriberInfo(doc) {
       simpleAction.push({
         new: {
           parent: controlBlock,
-          element: iedName,
-          reference: getReference(controlBlock, "IEDName")
+          element: iedName
         }
       });
     });

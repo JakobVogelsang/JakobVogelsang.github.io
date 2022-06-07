@@ -1,24 +1,9 @@
-import {css, html} from "../../../_snowpack/pkg/lit-element.js";
-import {ifDefined} from "../../../_snowpack/pkg/lit-html/directives/if-defined.js";
-import {
-  cloneElement,
-  getReference,
-  getValue,
-  isPublic
-} from "../../foundation.js";
+import {css} from "../../../_snowpack/pkg/lit-element.js";
+import "../../../_snowpack/pkg/@material/mwc-list/mwc-list-item.js";
+import {isPublic} from "../../foundation.js";
 export const allDataTypeSelector = "LNodeType, DOType, DAType, EnumType";
 export function isCreateOptions(options) {
   return options.parent !== void 0;
-}
-export function updateIDNamingAction(element) {
-  return (inputs) => {
-    const id = getValue(inputs.find((i) => i.label === "id"));
-    const desc = getValue(inputs.find((i) => i.label === "desc"));
-    if (id === element.getAttribute("id") && desc === element.getAttribute("desc"))
-      return [];
-    const newElement = cloneElement(element, {id, desc});
-    return [{old: {element}, new: {element: newElement}}];
-  };
 }
 function containsCreateAction(actions, newAction) {
   return !actions.some((action) => action.new.parent === newAction.new.parent && action.new.element.getAttribute("id") === newAction.new.element.getAttribute("id"));
@@ -46,19 +31,11 @@ export function addReferencedDataTypes(element, parent) {
     actions.push({
       new: {
         parent,
-        element: adjacent.cloneNode(true),
-        reference: getReference(parent, adjacent.tagName)
+        element: adjacent.cloneNode(true)
       }
     });
   });
   return actions;
-}
-export function buildListFromStringArray(list, selected) {
-  return list.map((item) => html`<mwc-list-item
-      value=${ifDefined(item === null ? void 0 : item)}
-      ?selected=${item === selected}
-      >${item}</mwc-list-item
-    >`);
 }
 export const styles = css`
   :host(.moving) section {

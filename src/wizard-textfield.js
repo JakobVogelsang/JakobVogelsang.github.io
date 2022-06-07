@@ -17,10 +17,14 @@ import {
   query
 } from "../_snowpack/pkg/lit-element.js";
 import {translate, get} from "../_snowpack/pkg/lit-translate.js";
+import "../_snowpack/pkg/@material/mwc-icon-button.js";
+import "../_snowpack/pkg/@material/mwc-list/mwc-list-item.js";
+import "../_snowpack/pkg/@material/mwc-menu.js";
+import "../_snowpack/pkg/@material/mwc-switch.js";
 import {TextField} from "../_snowpack/pkg/@material/mwc-textfield.js";
 export let WizardTextField = class extends TextField {
   constructor() {
-    super(...arguments);
+    super();
     this.nullable = false;
     this.multipliers = [null, ""];
     this.multiplierIndex = 0;
@@ -28,7 +32,9 @@ export let WizardTextField = class extends TextField {
     this.isNull = false;
     this.defaultValue = "";
     this.reservedValues = [];
+    this.disabledSwitch = false;
     this.nulled = null;
+    this.disabledSwitch = this.hasAttribute("disabled");
   }
   get multiplier() {
     if (this.unit == "")
@@ -102,7 +108,7 @@ export let WizardTextField = class extends TextField {
         <mwc-icon-button
           style="margin:5px;"
           icon="more"
-          ?disabled=${this.null}
+          ?disabled=${this.null || this.disabledSwitch}
           @click=${() => this.multiplierMenu?.show()}
         ></mwc-icon-button>
         <mwc-menu
@@ -125,6 +131,7 @@ export let WizardTextField = class extends TextField {
       return html`<mwc-switch
         style="margin-left: 12px;"
         ?checked=${!this.null}
+        ?disabled=${this.disabledSwitch}
         @change=${() => {
         this.null = !this.nullSwitch.checked;
       }}

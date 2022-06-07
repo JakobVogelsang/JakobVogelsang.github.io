@@ -1,9 +1,12 @@
 import {html} from "../../_snowpack/pkg/lit-html.js";
 import {get, translate} from "../../_snowpack/pkg/lit-translate.js";
+import "../../_snowpack/pkg/@material/mwc-button.js";
+import "../../_snowpack/pkg/@material/mwc-list/mwc-list-item.js";
+import "../wizard-checkbox.js";
+import "../wizard-select.js";
 import {
   cloneElement,
   createElement,
-  getReference,
   getValue,
   isPublic,
   newActionEvent,
@@ -11,6 +14,12 @@ import {
 } from "../foundation.js";
 import {getValAction, wizardContent} from "./abstractda.js";
 import {functionalConstraintEnum} from "./foundation/enums.js";
+function remove(element) {
+  return (wizard) => {
+    wizard.dispatchEvent(newActionEvent({old: {parent: element.parentElement, element}}));
+    wizard.dispatchEvent(newWizardEvent());
+  };
+}
 export function renderDa(fc, dchg, qchg, dupd) {
   return [
     html`<wizard-select
@@ -21,33 +30,24 @@ export function renderDa(fc, dchg, qchg, dupd) {
       fixedMenuPosition
       >${functionalConstraintEnum.map((fcOption) => html`<mwc-list-item value="${fcOption}">${fcOption}</mwc-list-item>`)}</wizard-select
     >`,
-    html`<wizard-select
+    html`<wizard-checkbox
       label="dchg"
       .maybeValue=${dchg}
-      helper="${translate("scl.valImport")}"
+      helper="${translate("scl.dchg")}"
       nullable
-      required
-      fixedMenuPosition
-      >${["true", "false"].map((option) => html`<mwc-list-item value="${option}">${option}</mwc-list-item>`)}</wizard-select
-    >`,
-    html`<wizard-select
+    ></wizard-checkbox>`,
+    html`<wizard-checkbox
       label="qchg"
       .maybeValue=${qchg}
-      helper="${translate("scl.valImport")}"
+      helper="${translate("scl.qchg")}"
       nullable
-      required
-      fixedMenuPosition
-      >${["true", "false"].map((option) => html`<mwc-list-item value="${option}">${option}</mwc-list-item>`)}</wizard-select
-    >`,
-    html`<wizard-select
+    ></wizard-checkbox>`,
+    html`<wizard-checkbox
       label="dupd"
       .maybeValue=${dupd}
-      helper="${translate("scl.valImport")}"
+      helper="${translate("scl.dupd")}"
       nullable
-      required
-      fixedMenuPosition
-      >${["true", "false"].map((option) => html`<mwc-list-item value="${option}">${option}</mwc-list-item>`)}</wizard-select
-    >`
+    ></wizard-checkbox>`
   ];
 }
 export function updateDaAction(element) {
@@ -112,22 +112,6 @@ export function editDAWizard(element) {
   const dchg = element.getAttribute("dchg");
   const qchg = element.getAttribute("qchg");
   const dupd = element.getAttribute("dupd");
-  const deleteButton = html`<mwc-button
-    icon="delete"
-    trailingIcon
-    label="${translate("remove")}"
-    @click=${(e) => {
-    e.target.dispatchEvent(newWizardEvent());
-    e.target.dispatchEvent(newActionEvent({
-      old: {
-        parent: element.parentElement,
-        element,
-        reference: element.nextSibling
-      }
-    }));
-  }}
-    fullwidth
-  ></mwc-button>`;
   const types = Array.from(doc.querySelectorAll("DAType, EnumType")).filter(isPublic).filter((type2) => type2.getAttribute("id"));
   const data = element.closest("DataTypeTemplates");
   return [
@@ -139,8 +123,14 @@ export function editDAWizard(element) {
         label: get("save"),
         action: updateDaAction(element)
       },
+      menuActions: [
+        {
+          icon: "delete",
+          label: get("remove"),
+          action: remove(element)
+        }
+      ],
       content: [
-        deleteButton,
         ...wizardContent(name, desc, bType, types, type, sAddr, valKind, valImport, Val, data),
         ...renderDa(fc, dchg, qchg, dupd)
       ]
@@ -184,8 +174,7 @@ export function createDaAction(parent) {
     actions.push({
       new: {
         parent,
-        element,
-        reference: getReference(parent, element.tagName)
+        element
       }
     });
     return actions;

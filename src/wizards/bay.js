@@ -1,12 +1,12 @@
 import {html} from "../../_snowpack/pkg/lit-html.js";
 import {get, translate} from "../../_snowpack/pkg/lit-translate.js";
+import "../wizard-textfield.js";
 import {
   createElement,
-  getReference,
   getValue
 } from "../foundation.js";
-import {updateNamingAction} from "./foundation/actions.js";
-function render(name, desc) {
+import {replaceNamingAttributeWithReferencesAction} from "./foundation/actions.js";
+export function renderBayWizard(name, desc) {
   return [
     html`<wizard-textfield
       label="name"
@@ -35,8 +35,7 @@ export function createAction(parent) {
     const action = {
       new: {
         parent,
-        element,
-        reference: getReference(parent, "Bay")
+        element
       }
     };
     return [action];
@@ -52,7 +51,7 @@ export function createBayWizard(parent) {
         label: get("add"),
         action: createAction(parent)
       },
-      content: render("", "")
+      content: renderBayWizard("", "")
     }
   ];
 }
@@ -64,9 +63,9 @@ export function editBayWizard(element) {
       primary: {
         icon: "edit",
         label: get("save"),
-        action: updateNamingAction(element)
+        action: replaceNamingAttributeWithReferencesAction(element, "bay.action.updateBay")
       },
-      content: render(element.getAttribute("name"), element.getAttribute("desc"))
+      content: renderBayWizard(element.getAttribute("name"), element.getAttribute("desc"))
     }
   ];
 }

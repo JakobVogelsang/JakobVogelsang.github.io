@@ -12,14 +12,20 @@
 | `getAttachedIeds`  |            | `((element: Element) => Element[]) \| undefined` | "() => []" |                                                  |
 | `gsecontrol`       |            | `IconButton`                                     |            |                                                  |
 | `readonly`         | `readonly` | `boolean`                                        | false      |                                                  |
+| `reportcontrol`    |            | `IconButton`                                     |            |                                                  |
+| `showfunctions`    |            | `IconButtonToggle`                               |            |                                                  |
 | `showieds`         |            | `IconButtonToggle`                               |            |                                                  |
+| `smvcontrol`       |            | `IconButton`                                     |            |                                                  |
 
 ## Methods
 
-| Method                       | Type                 | Description                                      |
-|------------------------------|----------------------|--------------------------------------------------|
-| `openCommunicationMapping`   | `(): void`           |                                                  |
-| `openCreateSubstationWizard` | `(): void`           | Opens a [[`WizardDialog`]] for creating a new `Substation` element. |
-| `openGseControlSelection`    | `(): void`           |                                                  |
-| `renderIedContainer`         | `(): TemplateResult` |                                                  |
-| `toggleShowIEDs`             | `(): void`           |                                                  |
+| Method                             | Type                 | Description                                      |
+|------------------------------------|----------------------|--------------------------------------------------|
+| `openCommunicationMapping`         | `(): void`           |                                                  |
+| `openCreateSubstationWizard`       | `(): void`           | Opens a [[`WizardDialog`]] for creating a new `Substation` element. |
+| `openGseControlSelection`          | `(): void`           |                                                  |
+| `openReportControlSelection`       | `(): void`           |                                                  |
+| `openSampledValueControlSelection` | `(): void`           |                                                  |
+| `renderIedContainer`               | `(): TemplateResult` |                                                  |
+| `toggleShowFunctions`              | `(): void`           |                                                  |
+| `toggleShowIEDs`                   | `(): void`           |                                                  |

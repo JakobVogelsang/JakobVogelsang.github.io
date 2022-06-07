@@ -63,7 +63,7 @@ function createSDoAction(parent) {
     return actions;
   };
 }
-function sDOWizard(options) {
+export function sDOWizard(options) {
   const doc = options.doc ? options.doc : options.parent.ownerDocument;
   const sdo = Array.from(doc.querySelectorAll(selector("SDO", options.identity ?? NaN))).find(isPublic) ?? null;
   const [title, action, type, menuActions, name, desc] = sdo ? [

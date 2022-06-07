@@ -80,7 +80,7 @@ function createDoAction(parent) {
     return actions;
   };
 }
-function dOWizard(options) {
+export function dOWizard(options) {
   const doc = options.doc ? options.doc : options.parent.ownerDocument;
   const DO = Array.from(doc.querySelectorAll(selector("DO", options.identity ?? NaN))).find(isPublic) ?? null;
   const [
